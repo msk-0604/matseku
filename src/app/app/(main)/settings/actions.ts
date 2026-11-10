@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireSalon } from "@/lib/auth";
@@ -7,6 +8,7 @@ import { decrypt, encrypt } from "@/lib/crypto";
 import { getBotInfo, isValidLiffId, setWebhookEndpoint, testWebhook } from "@/lib/line";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getBaseUrl, webhookUrl } from "@/lib/url";
+import { stripe } from "@/lib/stripe";
 
 export type SettingsState = { ok?: boolean; error?: string; message?: string };
 
@@ -88,4 +90,32 @@ export async function saveLineSettings(_prev: SettingsState, fd: FormData): Prom
     };
   }
   return { ok: true, message: `「${bot.displayName}」と接続しました。Webhook のテストも成功しました` };
+}
+
+export async function saveReminderTemplate(_prev: SettingsState, fd: FormData): Promise<SettingsState> {
+  const { supabase, salon } = await requireSalon();
+  const template = String(fd.get("reminder_template") ?? "").trim();
+  if (template.length > 300) return { error: "300文字以内にしてください" };
+  const { error } = await supabase
+    .from("salons")
+    .update({ reminder_template: template || null })
+    .eq("id", salon.id);
+  if (error) return { error: `保存できませんでした（${error.message}）` };
+  revalidatePath("/app/settings");
+  return { ok: true, message: template ? "保存しました" : "初期の文面に戻しました" };
+}
+
+/** Stripe の Customer Portal（カード変更・領収書・解約）を開く */
+export async function openBillingPortal() {
+  const { salon } = await requireSalon();
+  const admin = createAdminClient();
+  const { data } = await admin.from("salons").select("stripe_customer_id").eq("id", salon.id).single();
+  if (!data?.stripe_customer_id) redirect("/app/settings?billing=none");
+  const base = await getBaseUrl();
+  const session = await stripe().billingPortal.sessions.create({
+    customer: data.stripe_customer_id,
+    return_url: `${base}/app/settings`,
+    locale: "ja",
+  });
+  redirect(session.url);
 }

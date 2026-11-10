@@ -25,6 +25,7 @@ src/components/        フォームなどの部品
 2. 左メニュー **SQL Editor** → **New query** に `supabase/migrations/` のSQLを**ファイル名の順に1つずつ**貼り付けて **Run**。
    - `20261110000000_init.sql`（1週目）
    - `20261117000000_week2_line.sql`（2週目：LINE接続・予約）
+   - `20261124000000_week3_reminders_billing.sql`（3週目：リペア案内・課金・読み取り専用モード）
    - 「Success. No rows returned」と出ればOK。
    - **Table Editor** に salons、customers、visits などのテーブルができ、**Storage** に `visit-photos` バケットができます。
 3. **Authentication → Sign In / Providers → Email** が有効になっていることを確認。テスト中は **Confirm email** をOFFにしておくと楽です。
@@ -47,7 +48,12 @@ cp .env.example .env.local
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon / publishable キー | ○ |
 | `SUPABASE_SERVICE_ROLE_KEY` | service_role / secret キー | ○（Sensitive） |
 | `APP_ENCRYPTION_KEY` | `openssl rand -base64 32` の結果。LINEトークンの暗号化 | ○（Sensitive） |
-| `APP_URL` | 任意。公開URLを固定したいとき | 任意 |
+| `APP_URL` | 任意。公開URLを固定したいとき（本番は設定推奨） | 任意 |
+| `CRON_SECRET` | `openssl rand -hex 32` の結果。毎朝の案内の呼び出し用 | ○（Sensitive） |
+| `STRIPE_SECRET_KEY` | Stripe のシークレットキー | ○（Sensitive） |
+| `STRIPE_WEBHOOK_SECRET` | `npm run stripe:setup -- <公開URL>` で表示される値 | ○（Sensitive） |
+| `RESEND_API_KEY` | Resend の APIキー | ○（Sensitive） |
+| `EMAIL_FROM` | 送信元（例：`リペアコール <noreply@your-domain>`） | ○ |
 | `SEED_EMAIL` / `SEED_PASSWORD` | テスト用ログイン | 不要 |
 
 ### 3. 手元で動かす
@@ -77,6 +83,33 @@ npm run dev      # http://localhost:3000/app
 - LIFF のエンドポイントURLは `https://<公開URL>/liff/<サロンID>`（画面に表示されます）
 - Webhook URL は保存時に自動で登録されます。「Webhookの利用」だけ手動でオンにする
 
+### 6. Stripe
+
+```bash
+npm run stripe:setup                              # 商品・価格・クーポン・Customer Portal
+npm run stripe:setup -- https://<公開URL>          # ＋ Webhook を登録（表示された whsec_... を環境変数へ）
+```
+
+- 価格：月額 7,480円 / 年額 74,800円（税込）、14日間の無料体験
+- 紹介：紹介された店は申込時に、紹介した店は相手が有料に切り替わった時に、各1か月分（7,480円）割引
+- テストカード：`4242 4242 4242 4242`（期限は未来の日付、CVCは任意）
+
+### 7. Supabase の認証メール用URL
+
+**Authentication → URL Configuration** で
+- Site URL：本番の公開URL
+- Redirect URLs：`https://<公開URL>/**`（プレビューURLで試す場合はそれも追加）
+
+### 8. 毎朝のリペア案内
+
+`vercel.json` の Cron で毎日 01:00 UTC（10:00 JST）に `/api/cron/reminders` が呼ばれます（**Production のみ**）。
+プレビュー環境では手動で呼びます。
+
+```bash
+curl -H "Authorization: Bearer <CRON_SECRET>" "https://<公開URL>/api/cron/reminders?dry=1"   # 対象者の数だけ確認
+curl -H "Authorization: Bearer <CRON_SECRET>" "https://<公開URL>/api/cron/reminders"         # 実際に送る（10〜20時のみ）
+```
+
 ## 主なURL
 
 | URL | 内容 |
@@ -85,6 +118,11 @@ npm run dev      # http://localhost:3000/app
 | `/app/bookings` | 予約一覧（今日・1週間） |
 | `/app/slots` | 空き枠の管理 |
 | `/app/settings/line` | LINE接続 |
+| `/app/report` | 月次レポート |
+| `/app/customers/lapsed` | 来なくなったお客さま（45日以上） |
+| `/` | トップ・料金・申し込み（`?ref=紹介コード&utm_source=…`） |
+| `/api/cron/reminders` | 毎朝のリペア案内 |
+| `/api/stripe/webhook` | Stripe Webhook |
 | `/liff/<サロンID>/link?t=…` | お客さま：LINE連携（QRから開く） |
 | `/liff/<サロンID>/book` | お客さま：予約ページ |
 | `/api/line/webhook/<サロンID>` | LINE Webhook |

@@ -69,3 +69,13 @@ export function mondayOf(ymd: string): string {
 export function isPast(iso: string): boolean {
   return new Date(iso).getTime() <= Date.now();
 }
+
+/** 日本時間の今の「時」（0〜23） */
+export function jstHour(): number {
+  return new Date(Date.now() + JST_OFFSET_MS).getUTCHours();
+}
+
+/** 日本時間の今月（YYYY-MM） */
+export function jstMonth(): string {
+  return todayJst().slice(0, 7);
+}

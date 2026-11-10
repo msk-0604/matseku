@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { sign } from "@/lib/crypto";
 import { verifyLiffUser } from "@/lib/line";
+import { isActiveStatus } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /*
@@ -20,8 +21,9 @@ type Ctx = { admin: ReturnType<typeof createAdminClient>; salonId: string; lineU
 async function authenticate(salonId: string, accessToken: string): Promise<Ctx | { error: string }> {
   if (!uuid.safeParse(salonId).success) return { error: "ページが見つかりません" };
   const admin = createAdminClient();
-  const { data: salon } = await admin.from("salons").select("id, liff_id").eq("id", salonId).maybeSingle();
+  const { data: salon } = await admin.from("salons").select("id, liff_id, subscription_status").eq("id", salonId).maybeSingle();
   if (!salon?.liff_id) return { error: "このサロンは準備中です" };
+  if (!isActiveStatus(salon.subscription_status)) return { error: "現在、LINEからのご予約を受け付けていません。サロンへ直接ご連絡ください" };
   const lineUserId = await verifyLiffUser(accessToken, salon.liff_id);
   if (!lineUserId) return { error: "LINEの認証に失敗しました。ページを開き直してください" };
   return { admin, salonId, lineUserId };

@@ -7,6 +7,7 @@ const ITEMS = [
   { href: "/app/customers", label: "顧客", icon: "👤" },
   { href: "/app/bookings", label: "予約", icon: "📅" },
   { href: "/app/slots", label: "空き枠", icon: "🕒" },
+  { href: "/app/report", label: "レポート", icon: "📈" },
   { href: "/app/settings", label: "設定", icon: "⚙️" },
 ];
 

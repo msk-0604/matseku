@@ -1,7 +1,8 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-const API = "https://api.line.me";
+// テスト時だけ LINE_API_BASE で差し替えられる（本番では設定しない）
+const API = process.env.LINE_API_BASE ?? "https://api.line.me";
 
 export type BotInfo = { userId: string; basicId: string; displayName: string; pictureUrl?: string };
 
@@ -82,4 +83,31 @@ export async function verifyLiffUser(accessToken: string, liffId: string): Promi
 export function liffUrl(liffId: string, path = "", query?: Record<string, string>): string {
   const qs = query ? `?${new URLSearchParams(query).toString()}` : "";
   return `https://liff.line.me/${liffId}${path}${qs}`;
+}
+
+export type PushResult = { ok: true } | { ok: false; status: number; body: string };
+
+/**
+ * Push メッセージを1通送る。retryKey を付けると、同じキーの再送は LINE 側で重複しない。
+ */
+export async function pushMessage(
+  accessToken: string,
+  to: string,
+  messages: unknown[],
+  retryKey: string,
+): Promise<PushResult> {
+  let res: Response;
+  try {
+    res = await lineFetch("/v2/bot/message/push", accessToken, {
+      method: "POST",
+      headers: { "X-Line-Retry-Key": retryKey },
+      body: JSON.stringify({ to, messages }),
+    });
+  } catch (e) {
+    // 通信エラー（status 0 として扱い、再送の対象にする）
+    return { ok: false, status: 0, body: String(e).slice(0, 500) };
+  }
+  // 409 は同じ retryKey で受付済み（＝送信済み）
+  if (res.ok || res.status === 409) return { ok: true };
+  return { ok: false, status: res.status, body: (await res.text()).slice(0, 500) };
 }

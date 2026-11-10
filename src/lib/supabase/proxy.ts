@@ -29,8 +29,9 @@ export async function updateSession(request: NextRequest) {
   const isLoggedIn = Boolean(data?.claims?.sub);
   const path = request.nextUrl.pathname;
   const isLoginPage = path === "/app/login";
+  const isPublic = isLoginPage || path === "/app/forgot";
 
-  if (!isLoggedIn && !isLoginPage) {
+  if (!isLoggedIn && !isPublic) {
     const to = request.nextUrl.clone();
     to.pathname = "/app/login";
     to.search = "";

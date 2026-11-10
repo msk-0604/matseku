@@ -16,6 +16,7 @@ export default function CustomersPage({ searchParams }: PageProps<"/app/customer
         <h1 className="text-xl font-bold">顧客一覧</h1>
         <Link href="/app/customers/new" className="btn-primary">＋ 新規</Link>
       </div>
+      <Link href="/app/customers/lapsed" className="mb-3 block text-sm text-brand-600">来なくなったお客さま（45日以上）→</Link>
       <Suspense fallback={<PageLoading />}>
         <CustomerList searchParams={searchParams} />
       </Suspense>

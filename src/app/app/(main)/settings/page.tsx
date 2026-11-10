@@ -40,6 +40,7 @@ async function Settings() {
   const connected = Boolean(salon.line_connected_at);
   return (
     <div className="space-y-4">
+      <Link href="/app/setup" className="text-sm text-brand-600">初期設定の進み具合を見る →</Link>
       <Link href="/app/settings/line" className="card flex items-center justify-between gap-3 active:bg-neutral-50">
         <div>
           <div className="font-bold">LINE公式アカウントの接続</div>
@@ -103,6 +104,12 @@ async function Settings() {
           <CopyField label="紹介用URL" value={`${base}/?ref=${salon.referral_code}#pricing`} />
         </section>
       )}
+
+      <nav className="flex flex-wrap gap-x-4 gap-y-2 pt-2 text-xs text-neutral-500">
+        <Link href="/legal/tokushoho">特定商取引法に基づく表記</Link>
+        <Link href="/legal/terms">利用規約</Link>
+        <Link href="/legal/privacy">プライバシーポリシー</Link>
+      </nav>
     </div>
   );
 }

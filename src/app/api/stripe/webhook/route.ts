@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type Stripe from "stripe";
 import { randomBytes } from "node:crypto";
 import { sendSetupEmail } from "@/lib/onboarding";
+import { DEFAULT_SALON_NAME } from "@/lib/setup";
 import { COUPON_REFERRER, stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getBaseUrl } from "@/lib/url";
@@ -70,7 +71,7 @@ async function onCheckoutCompleted(admin: Admin, session: Stripe.Checkout.Sessio
   if (!email || !stripeCustomerId || !subscriptionId) throw new Error("checkout session に必要な情報がありません");
 
   const salonName =
-    session.custom_fields?.find((f) => f.key === "salon_name")?.text?.value?.trim().slice(0, 100) || "マイサロン";
+    session.custom_fields?.find((f) => f.key === "salon_name")?.text?.value?.trim().slice(0, 100) || DEFAULT_SALON_NAME;
   const meta = session.metadata ?? {};
   const sub = await stripe().subscriptions.retrieve(subscriptionId);
 
@@ -101,6 +102,7 @@ async function onCheckoutCompleted(admin: Admin, session: Stripe.Checkout.Sessio
         owner_user_id: userId,
         referral_code: randomBytes(4).toString("hex").toUpperCase(),
         referred_by_salon_id: meta.referrer_salon_id || null,
+        beta_invite_code: meta.invite || null,
         acquisition: {
           ref: meta.ref || null,
           utm_source: meta.utm_source || null,
@@ -114,10 +116,12 @@ async function onCheckoutCompleted(admin: Admin, session: Stripe.Checkout.Sessio
     salonId = created.id;
   }
 
+  if (meta.invite && !existing) await admin.rpc("use_beta_invite", { p_code: meta.invite });
+
   await admin.from("events").insert({
     salon_id: salonId,
     type: "signup",
-    props: { plan: values.plan, ref: meta.ref || null, utm_source: meta.utm_source || null, utm_campaign: meta.utm_campaign || null },
+    props: { plan: values.plan, ref: meta.ref || null, invite: meta.invite || null, utm_source: meta.utm_source || null, utm_campaign: meta.utm_campaign || null },
   });
 }
 

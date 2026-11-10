@@ -6,6 +6,7 @@ import { daysBetween, formatDate, todayJst } from "@/lib/date";
 import { digitsOnly, kanaRow, toHiragana } from "@/lib/text";
 import type { CustomerOverview } from "@/lib/types";
 import { PageLoading } from "@/components/loading";
+import { getSetupStatus } from "@/lib/setup";
 
 export const metadata: Metadata = { title: "顧客一覧" };
 
@@ -17,10 +18,28 @@ export default function CustomersPage({ searchParams }: PageProps<"/app/customer
         <Link href="/app/customers/new" className="btn-primary">＋ 新規</Link>
       </div>
       <Link href="/app/customers/lapsed" className="mb-3 block text-sm text-brand-600">来なくなったお客さま（45日以上）→</Link>
+      <Suspense>
+        <SetupBanner />
+      </Suspense>
       <Suspense fallback={<PageLoading />}>
         <CustomerList searchParams={searchParams} />
       </Suspense>
     </>
+  );
+}
+
+async function SetupBanner() {
+  const { supabase, salon } = await requireSalon();
+  const st = await getSetupStatus(supabase, salon);
+  if (st.complete) return null;
+  return (
+    <Link href="/app/setup" className="mb-3 flex items-center justify-between rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm">
+      <span>
+        <b>初期設定を完了しましょう</b>
+        <span className="block text-xs text-neutral-600">あと{st.total - st.done}ステップで自動案内が始まります</span>
+      </span>
+      <span className="font-bold text-brand-700">{st.done}/{st.total} →</span>
+    </Link>
   );
 }
 

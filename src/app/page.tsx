@@ -44,6 +44,12 @@ export default function Home() {
           <PricingForm />
         </Suspense>
       </section>
+
+      <footer className="mt-16 flex flex-wrap justify-center gap-x-4 gap-y-2 border-t border-neutral-200 pt-6 text-xs text-neutral-500">
+        <Link href="/legal/tokushoho">特定商取引法に基づく表記</Link>
+        <Link href="/legal/terms">利用規約</Link>
+        <Link href="/legal/privacy">プライバシーポリシー</Link>
+      </footer>
     </main>
   );
 }

@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { after } from "next/server";
+import { todayJst } from "@/lib/date";
 import { requireSalon } from "@/lib/auth";
 import { BottomNav, NavBar } from "@/components/bottom-nav";
 import { signOut } from "../actions";
@@ -14,7 +16,12 @@ const STATUS_MESSAGE: Record<string, string> = {
 };
 
 async function BillingBanner() {
-  const { salon } = await requireSalon();
+  const { supabase, salon } = await requireSalon();
+  // 「直近7日に使った店舗」の集計用に、使った日を1日1行で記録する（表示を遅らせないよう後で実行）
+  const day = todayJst();
+  after(async () => {
+    await supabase.from("salon_activity").upsert({ salon_id: salon.id, day }, { onConflict: "salon_id,day", ignoreDuplicates: true });
+  });
   const msg = STATUS_MESSAGE[salon.subscription_status];
   if (!msg) return null;
   return (

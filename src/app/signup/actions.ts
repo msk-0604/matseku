@@ -20,6 +20,21 @@ export async function startCheckout(_prev: CheckoutState, fd: FormData): Promise
     utm_campaign: clean(fd.get("utm_campaign")),
   };
 
+  // ベータ招待：無料期間を延長
+  const invite = clean(fd.get("invite"), 20).toUpperCase();
+  let trialDays = TRIAL_DAYS;
+  if (invite) {
+    const { data } = await createAdminClient()
+      .from("beta_invites")
+      .select("code, trial_days, max_uses, used_count, expires_at")
+      .eq("code", invite)
+      .maybeSingle();
+    if (!data || data.used_count >= data.max_uses || (data.expires_at && new Date(data.expires_at) < new Date())) {
+      return { error: "招待コードが無効か、使用回数の上限に達しています" };
+    }
+    trialDays = data.trial_days;
+  }
+
   let referrerSalonId = "";
   if (ref) {
     const { data } = await createAdminClient()
@@ -40,12 +55,12 @@ export async function startCheckout(_prev: CheckoutState, fd: FormData): Promise
       locale: "ja",
       line_items: [{ price: await priceIdFor(plan), quantity: 1 }],
       payment_method_collection: "always",
-      subscription_data: { trial_period_days: TRIAL_DAYS, metadata: { plan } },
+      subscription_data: { trial_period_days: trialDays, metadata: { plan } },
       custom_fields: [
         { key: "salon_name", label: { type: "custom", custom: "サロン名" }, type: "text", text: { maximum_length: 100 } },
       ],
       discounts: referrerSalonId ? [{ coupon: COUPON_REFERRED }] : undefined,
-      metadata: { plan, ref, referrer_salon_id: referrerSalonId, ...utm },
+      metadata: { plan, ref, invite, referrer_salon_id: referrerSalonId, ...utm },
       success_url: `${base}/signup/success`,
       cancel_url: `${base}/#pricing`,
     });

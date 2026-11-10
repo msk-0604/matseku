@@ -41,7 +41,12 @@ export function PricingForm() {
         <input id="ref" name="ref" defaultValue={sp.get("ref") ?? ""} autoCapitalize="characters" className="input font-mono uppercase" placeholder="例：A1B2C3D4" />
         <p className="mt-1 text-xs text-neutral-500">紹介コードがあると、最初の1か月分（7,480円）が割引になります</p>
       </div>
-      {(["utm_source", "utm_medium", "utm_campaign"] as const).map((k) => (
+      {sp.get("invite") && (
+        <p className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-700">
+          ベータ招待コード <b className="font-mono">{sp.get("invite")}</b> が適用されます（無料期間が延長されます）
+        </p>
+      )}
+      {(["invite", "utm_source", "utm_medium", "utm_campaign"] as const).map((k) => (
         <input key={k} type="hidden" name={k} value={sp.get(k) ?? ""} />
       ))}
       {state.error && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
@@ -51,6 +56,11 @@ export function PricingForm() {
       <p className="text-center text-xs leading-relaxed text-neutral-500">
         お申し込みにはカードの登録が必要です。無料期間中に解約すれば料金はかかりません。
         無料期間が終わると自動で有料プランに切り替わります。
+        <br />
+        お申し込みにより
+        <a href="/legal/terms" className="underline">利用規約</a>・
+        <a href="/legal/privacy" className="underline">プライバシーポリシー</a>
+        に同意したものとみなします。
       </p>
     </form>
   );

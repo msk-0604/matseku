@@ -119,3 +119,26 @@ export async function openBillingPortal() {
   });
   redirect(session.url);
 }
+
+/** 初期設定：サロン名だけ保存 */
+export async function saveSalonName(_prev: SettingsState, fd: FormData): Promise<SettingsState> {
+  const { supabase, salon } = await requireSalon();
+  const name = String(fd.get("name") ?? "").trim();
+  if (!name || name.length > 100) return { error: "サロン名を入力してください（100文字以内）" };
+  const { error } = await supabase.from("salons").update({ name }).eq("id", salon.id);
+  if (error) return { error: `保存できませんでした（${error.message}）` };
+  revalidatePath("/app", "layout");
+  return { ok: true, message: "保存しました" };
+}
+
+/** 初期設定：リペア日数を確定 */
+export async function confirmRepairDays(_prev: SettingsState, fd: FormData): Promise<SettingsState> {
+  const { supabase, salon } = await requireSalon();
+  const days = Number(String(fd.get("default_repair_days") ?? "").normalize("NFKC"));
+  if (!Number.isInteger(days) || days < 7 || days > 90) return { error: "7〜90日で入力してください" };
+  const { error } = await supabase.from("salons").update({ default_repair_days: days }).eq("id", salon.id);
+  if (error) return { error: `保存できませんでした（${error.message}）` };
+  await supabase.from("events").insert({ salon_id: salon.id, type: "setup_repair_days", props: { days } });
+  revalidatePath("/app", "layout");
+  return { ok: true, message: `${days}日で設定しました` };
+}

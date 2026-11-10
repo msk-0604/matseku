@@ -36,7 +36,7 @@ export async function setPassword(_prev: PasswordState, formData: FormData): Pro
   const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password });
   if (error) return { error: `設定できませんでした（${error.message}）` };
-  redirect("/app/settings/line");
+  redirect("/app/setup");
 }
 
 export type ForgotState = { error?: string; sent?: boolean };

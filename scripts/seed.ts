@@ -154,6 +154,9 @@ async function main() {
   const { error: sErr } = await supabase.from("slots").insert(slots);
   if (sErr) throw sErr;
 
+  // 初期設定ウィザード：リペア日数は確定済みにしておく（LINE接続だけが残る）
+  await supabase.from("events").insert({ salon_id: salon.id, type: "setup_repair_days", props: { days: 21 } });
+
   console.log(`サロン1件・顧客${CUSTOMERS.length}人・来店記録${visitCount}件・空き枠${slots.length}枠を作成しました`);
   console.log(`ログイン：${email}`);
 }

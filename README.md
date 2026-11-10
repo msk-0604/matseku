@@ -26,6 +26,7 @@ src/components/        フォームなどの部品
    - `20261110000000_init.sql`（1週目）
    - `20261117000000_week2_line.sql`（2週目：LINE接続・予約）
    - `20261124000000_week3_reminders_billing.sql`（3週目：リペア案内・課金・読み取り専用モード）
+   - `20261201000000_week4_admin.sql`（4週目：管理画面・ベータ招待・利用状況）
    - 「Success. No rows returned」と出ればOK。
    - **Table Editor** に salons、customers、visits などのテーブルができ、**Storage** に `visit-photos` バケットができます。
 3. **Authentication → Sign In / Providers → Email** が有効になっていることを確認。テスト中は **Confirm email** をOFFにしておくと楽です。
@@ -54,6 +55,7 @@ cp .env.example .env.local
 | `STRIPE_WEBHOOK_SECRET` | `npm run stripe:setup -- <公開URL>` で表示される値 | ○（Sensitive） |
 | `RESEND_API_KEY` | Resend の APIキー | ○（Sensitive） |
 | `EMAIL_FROM` | 送信元（例：`リペアコール <noreply@your-domain>`） | ○ |
+| `ADMIN_REPORT_EMAIL` | 日次レポートの送り先（運営者） | ○ |
 | `SEED_EMAIL` / `SEED_PASSWORD` | テスト用ログイン | 不要 |
 
 ### 3. 手元で動かす
@@ -110,6 +112,10 @@ curl -H "Authorization: Bearer <CRON_SECRET>" "https://<公開URL>/api/cron/remi
 curl -H "Authorization: Bearer <CRON_SECRET>" "https://<公開URL>/api/cron/reminders"         # 実際に送る（10〜20時のみ）
 ```
 
+### 9. 運営者の管理画面
+
+`admins` テーブルに登録したユーザーだけが `/admin` を開けます。登録方法と本番公開の手順は [docs/production.md](./docs/production.md) を見てください。
+
 ## 主なURL
 
 | URL | 内容 |
@@ -121,6 +127,11 @@ curl -H "Authorization: Bearer <CRON_SECRET>" "https://<公開URL>/api/cron/remi
 | `/app/report` | 月次レポート |
 | `/app/customers/lapsed` | 来なくなったお客さま（45日以上） |
 | `/` | トップ・料金・申し込み（`?ref=紹介コード&utm_source=…`） |
+| `/app/setup` | 初期設定ウィザード |
+| `/admin` | 運営者の管理画面 |
+| `/admin/invites` | ベータ招待コード |
+| `/legal/tokushoho` `/legal/terms` `/legal/privacy` | 法務ページ（文面は仮） |
+| `/api/cron/daily-report` | 運営者への日次レポート（9:00 JST） |
 | `/api/cron/reminders` | 毎朝のリペア案内 |
 | `/api/stripe/webhook` | Stripe Webhook |
 | `/liff/<サロンID>/link?t=…` | お客さま：LINE連携（QRから開く） |

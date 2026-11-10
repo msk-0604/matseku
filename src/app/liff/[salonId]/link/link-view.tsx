@@ -70,7 +70,10 @@ export function LinkView() {
             >
               {status === "sending" ? "登録中…" : "登録する"}
             </button>
-            <p className="text-xs text-neutral-500">登録すると、LINEのユーザー情報（ID）がサロンのお客さま情報と結び付けられます。</p>
+            <p className="text-xs text-neutral-500">
+              登録すると、LINEのユーザーID（表示名や画像は保存しません）がサロンのお客さま情報と結び付けられます。
+              <a href="/legal/privacy" className="underline">プライバシーポリシー</a>
+            </p>
           </div>
         );
       }}

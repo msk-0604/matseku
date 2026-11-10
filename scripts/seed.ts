@@ -3,8 +3,8 @@
  *   npm run seed
  *
  * .env.local の SEED_EMAIL / SEED_PASSWORD でログインユーザーを作り（既にあればパスワードを更新）、
- * そのユーザーのサロン1件・顧客10人・来店記録を作り直します。
- * ※ そのユーザーのサロンにある既存データは削除されます。ほかのユーザーのデータには触れません。
+ * そのユーザーのサロン1件・顧客10人・来店記録・空き枠を作り直します。
+ * ※ そのユーザーのサロンにある既存データ（LINE接続の設定も含む）は削除されます。ほかのユーザーのデータには触れません。
  */
 import { config } from "dotenv";
 import { randomBytes } from "node:crypto";
@@ -141,7 +141,20 @@ async function main() {
     }
   }
 
-  console.log(`サロン1件・顧客${CUSTOMERS.length}人・来店記録${visitCount}件を作成しました`);
+  // 空き枠：明日から14日間、火曜以外の 10:00 / 13:00 / 16:00（各90分）
+  const slots: { salon_id: string; starts_at: string; ends_at: string }[] = [];
+  for (let i = 1; i <= 14; i++) {
+    const ymd = daysAgo(-i);
+    if (new Date(`${ymd}T00:00:00Z`).getUTCDay() === 2) continue;
+    for (const hh of ["10:00", "13:00", "16:00"]) {
+      const start = new Date(`${ymd}T${hh}:00+09:00`);
+      slots.push({ salon_id: salon.id, starts_at: start.toISOString(), ends_at: new Date(start.getTime() + 90 * 60_000).toISOString() });
+    }
+  }
+  const { error: sErr } = await supabase.from("slots").insert(slots);
+  if (sErr) throw sErr;
+
+  console.log(`サロン1件・顧客${CUSTOMERS.length}人・来店記録${visitCount}件・空き枠${slots.length}枠を作成しました`);
   console.log(`ログイン：${email}`);
 }
 

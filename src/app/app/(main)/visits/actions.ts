@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireSalon } from "@/lib/auth";
 import { lashDesignFromForm } from "@/lib/lash";
+import { addDays, jstToIso } from "@/lib/date";
+import { issueLinkToken } from "@/lib/link-token";
 
 export type VisitFormState = {
   error?: string;
@@ -68,11 +70,23 @@ export async function saveVisit(
   const removeIds = fd.getAll("remove_photo_id").map(String).filter((v) => uuid.safeParse(v).success);
 
   if (input.isNew) {
+    // 同じ日の予約があれば、この来店記録と結び付けて「来店済」にする（案内の成果の集計に使う）
+    const { data: booking } = await supabase
+      .from("bookings")
+      .select("id, slots!inner(starts_at)")
+      .eq("customer_id", input.customerId)
+      .eq("status", "confirmed")
+      .gte("slots.starts_at", jstToIso(values.visited_at, "00:00"))
+      .lt("slots.starts_at", jstToIso(addDays(values.visited_at, 1), "00:00"))
+      .limit(1)
+      .maybeSingle();
+
     const { error } = await supabase
       .from("visits")
-      .insert({ id: input.visitId, customer_id: input.customerId, ...values });
+      .insert({ id: input.visitId, customer_id: input.customerId, booking_id: booking?.id ?? null, ...values });
     if (error) return { error: `保存できませんでした（${error.message}）` };
-    await supabase.from("events").insert({ salon_id: salon.id, type: "visit_created", props: {} });
+    if (booking) await supabase.from("bookings").update({ status: "completed" }).eq("id", booking.id);
+    await supabase.from("events").insert({ salon_id: salon.id, type: "visit_created", props: { from_booking: Boolean(booking) } });
   } else {
     const { error } = await supabase.from("visits").update(values).eq("id", input.visitId);
     if (error) return { error: `保存できませんでした（${error.message}）` };
@@ -102,7 +116,15 @@ export async function saveVisit(
 
   revalidatePath(`/app/customers/${input.customerId}`);
   revalidatePath("/app/customers");
-  // 2週目：ここで「LINE連携QR」画面へ移動する予定
+
+  // 新規の来店記録で、まだLINE連携していないお客さまなら「LINE連携QR」を表示する
+  if (input.isNew && salon.liff_id) {
+    const { data: customer } = await supabase.from("customers").select("line_user_id").eq("id", input.customerId).single();
+    if (customer && !customer.line_user_id) {
+      const token = await issueLinkToken(supabase, input.customerId);
+      redirect(`/app/customers/${input.customerId}/link?t=${token}`);
+    }
+  }
   redirect(`/app/customers/${input.customerId}`);
 }
 

@@ -5,11 +5,14 @@ export type Salon = {
   subscription_status: string;
   line_channel_id: string | null;
   liff_id: string | null;
+  line_basic_id: string | null;
+  line_bot_name: string | null;
+  line_connected_at: string | null;
 };
 
 /** salons テーブルからブラウザ側で読める列（秘密情報の列は権限上読めない） */
 export const SALON_COLUMNS =
-  "id, name, default_repair_days, subscription_status, line_channel_id, liff_id";
+  "id, name, default_repair_days, subscription_status, line_channel_id, liff_id, line_basic_id, line_bot_name, line_connected_at";
 
 export type Customer = {
   id: string;
@@ -69,4 +72,23 @@ export type LashDesign = {
   color?: string | null;
   glue?: string | null;
   next_note?: string | null;
+};
+
+export type Slot = {
+  id: string;
+  salon_id: string;
+  starts_at: string;
+  ends_at: string;
+  is_booked: boolean;
+};
+
+export type Booking = {
+  id: string;
+  salon_id: string;
+  customer_id: string;
+  slot_id: string;
+  status: "confirmed" | "canceled" | "completed" | "no_show";
+  source: "reminder" | "direct";
+  reminder_id: string | null;
+  created_at: string;
 };

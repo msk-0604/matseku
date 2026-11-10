@@ -3,11 +3,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSalon } from "@/lib/auth";
-import { addDays, daysBetween, formatDate, formatDateLong, todayJst } from "@/lib/date";
+import { addDays, daysBetween, formatDate, formatDateLong, formatSlot, todayJst } from "@/lib/date";
 import { summarizeLash } from "@/lib/lash";
 import { formatPhone, yen } from "@/lib/text";
 import type { Customer, Visit } from "@/lib/types";
 import { PageLoading } from "@/components/loading";
+import { createLinkToken } from "../actions";
 
 export const metadata: Metadata = { title: "カルテ" };
 
@@ -42,7 +43,7 @@ async function Karte({ params }: { params: PageProps<"/app/customers/[id]">["par
   const { supabase, salon } = await requireSalon();
   const today = todayJst();
 
-  const [{ data: customer }, { data: visitsData }] = await Promise.all([
+  const [{ data: customer }, { data: visitsData }, { data: upcoming }] = await Promise.all([
     supabase.from("customers").select("*").eq("id", id).maybeSingle<Customer>(),
     supabase
       .from("visits")
@@ -51,6 +52,14 @@ async function Karte({ params }: { params: PageProps<"/app/customers/[id]">["par
       .order("visited_at", { ascending: false })
       .order("created_at", { ascending: false })
       .overrideTypes<(Visit & { visit_photos: { count: number }[] })[], { merge: false }>(),
+    supabase
+      .from("bookings")
+      .select("id, source, slots!inner(starts_at, ends_at)")
+      .eq("customer_id", id)
+      .eq("status", "confirmed")
+      .gte("slots.starts_at", new Date(`${today}T00:00:00+09:00`).toISOString())
+      .limit(1)
+      .maybeSingle<{ id: string; source: string; slots: { starts_at: string; ends_at: string } }>(),
   ]);
   if (!customer) notFound();
   const visits = visitsData ?? [];
@@ -88,7 +97,20 @@ async function Karte({ params }: { params: PageProps<"/app/customers/[id]">["par
         </section>
       )}
 
+      {upcoming && (
+        <section className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm">
+          <b>次回のご予約：</b>{formatSlot(upcoming.slots.starts_at, upcoming.slots.ends_at, today)}
+          {upcoming.source === "reminder" && <span className="chip ml-2 bg-brand-100 text-brand-700">案内から</span>}
+        </section>
+      )}
+
       <Link href={`/app/customers/${id}/visits/new`} className="btn-primary w-full">＋ 来店を記録する</Link>
+
+      {!customer.line_user_id && (
+        <form action={createLinkToken.bind(null, id)}>
+          <button className="btn-secondary w-full">LINE連携QRを表示</button>
+        </form>
+      )}
 
       <section className="card">
         <h2 className="mb-1 font-bold">リペアの目安</h2>

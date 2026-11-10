@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { requireSalon } from "@/lib/auth";
+import { BottomNav, NavBar } from "@/components/bottom-nav";
 import { signOut } from "../actions";
 
 async function SalonName() {
@@ -22,6 +23,9 @@ export default function MainLayout({ children }: LayoutProps<"/app">) {
         </form>
       </header>
       <main className="flex-1 px-4 pt-4 pb-24">{children}</main>
+      <Suspense fallback={<NavBar pathname="" />}>
+        <BottomNav />
+      </Suspense>
     </div>
   );
 }

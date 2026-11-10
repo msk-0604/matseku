@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireSalon } from "@/lib/auth";
 import { digitsOnly, toHiragana } from "@/lib/text";
+import { issueLinkToken } from "@/lib/link-token";
 
 export type CustomerFormState = {
   error?: string;
@@ -122,4 +123,13 @@ export async function deleteCustomer(customerId: string) {
 
   revalidatePath("/app/customers");
   redirect("/app/customers");
+}
+
+/** LINE連携QR用のワンタイムトークンを作って、QR画面へ移動する */
+export async function createLinkToken(customerId: string) {
+  const { supabase, salon } = await requireSalon();
+  if (!salon.liff_id) redirect(`/app/customers/${customerId}/link`);
+
+  const token = await issueLinkToken(supabase, customerId);
+  redirect(`/app/customers/${customerId}/link?t=${token}`);
 }

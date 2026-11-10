@@ -38,3 +38,34 @@ export function formatDateLong(ymd: string | null | undefined): string {
   const d = parseYmd(ymd);
   return `${d.getUTCFullYear()}年${d.getUTCMonth() + 1}月${d.getUTCDate()}日`;
 }
+
+/** ISO日時 → 日本時間の YYYY-MM-DD */
+export function jstDate(iso: string): string {
+  return new Date(new Date(iso).getTime() + JST_OFFSET_MS).toISOString().slice(0, 10);
+}
+
+/** ISO日時 → 日本時間の HH:MM */
+export function jstTime(iso: string): string {
+  return new Date(new Date(iso).getTime() + JST_OFFSET_MS).toISOString().slice(11, 16);
+}
+
+/** 日本時間の日付と時刻 → ISO（UTC） */
+export function jstToIso(ymd: string, hhmm: string): string {
+  return new Date(`${ymd}T${hhmm}:00+09:00`).toISOString();
+}
+
+/** 11/20(金) 14:00〜15:30 */
+export function formatSlot(startsAt: string, endsAt: string, today?: string): string {
+  return `${formatDate(jstDate(startsAt), today)} ${jstTime(startsAt)}〜${jstTime(endsAt)}`;
+}
+
+/** その日を含む週の月曜日（YYYY-MM-DD） */
+export function mondayOf(ymd: string): string {
+  const dow = new Date(`${ymd}T00:00:00Z`).getUTCDay(); // 0=日
+  return addDays(ymd, dow === 0 ? -6 : 1 - dow);
+}
+
+/** ISO日時がもう過ぎているか */
+export function isPast(iso: string): boolean {
+  return new Date(iso).getTime() <= Date.now();
+}

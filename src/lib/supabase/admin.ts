@@ -4,7 +4,7 @@ import { supabaseUrl } from "@/lib/env";
 
 /**
  * service role（RLSを無視する）クライアント。
- * LINE のトークン保存、Webhook、LIFF（お客さま側）の処理など、サーバー内だけで使う。
+ * LINE のトークン保存、Webhook、お客さま用の予約ページの処理など、サーバー内だけで使う。
  * 呼び出し側で必ず salon_id を絞り込むこと。
  */
 export function createAdminClient() {

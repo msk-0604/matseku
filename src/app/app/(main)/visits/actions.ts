@@ -7,6 +7,7 @@ import { requireSalon } from "@/lib/auth";
 import { lashDesignFromForm } from "@/lib/lash";
 import { addDays, jstToIso } from "@/lib/date";
 import { issueLinkToken } from "@/lib/link-token";
+import { lineConnected } from "@/lib/setup";
 
 export type VisitFormState = {
   error?: string;
@@ -73,11 +74,12 @@ export async function saveVisit(
     // 同じ日の予約があれば、この来店記録と結び付けて「来店済」にする（案内の成果の集計に使う）
     const { data: booking } = await supabase
       .from("bookings")
-      .select("id, slots!inner(starts_at)")
+      .select("id")
       .eq("customer_id", input.customerId)
       .eq("status", "confirmed")
-      .gte("slots.starts_at", jstToIso(values.visited_at, "00:00"))
-      .lt("slots.starts_at", jstToIso(addDays(values.visited_at, 1), "00:00"))
+      .gte("starts_at", jstToIso(values.visited_at, "00:00"))
+      .lt("starts_at", jstToIso(addDays(values.visited_at, 1), "00:00"))
+      .order("starts_at")
       .limit(1)
       .maybeSingle();
 
@@ -118,7 +120,7 @@ export async function saveVisit(
   revalidatePath("/app/customers");
 
   // 新規の来店記録で、まだLINE連携していないお客さまなら「LINE連携QR」を表示する
-  if (input.isNew && salon.liff_id) {
+  if (input.isNew && lineConnected(salon)) {
     const { data: customer } = await supabase.from("customers").select("line_user_id").eq("id", input.customerId).single();
     if (customer && !customer.line_user_id) {
       const token = await issueLinkToken(supabase, input.customerId);

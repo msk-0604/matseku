@@ -4,6 +4,7 @@ import Link from "next/link";
 import { requireSalon } from "@/lib/auth";
 import { addDays, jstMonth, jstToIso, todayJst } from "@/lib/date";
 import { yen } from "@/lib/text";
+import { CHANNELS } from "@/lib/booking";
 import { PageLoading } from "@/components/loading";
 
 export const metadata: Metadata = { title: "月次レポート" };
@@ -50,7 +51,7 @@ async function Report({ searchParams }: { searchParams: PageProps<"/app/report">
 
   const [sent, reminderBookings, returned, allVisits, usage, lapsed] = await Promise.all([
     supabase.from("reminders").select("id", { count: "exact", head: true }).eq("status", "sent").gte("sent_at", fromIso).lt("sent_at", toIso),
-    supabase.from("bookings").select("id", { count: "exact", head: true }).eq("source", "reminder").neq("status", "canceled").gte("created_at", fromIso).lt("created_at", toIso),
+    supabase.from("bookings").select("channel").eq("source", "reminder").neq("status", "canceled").gte("created_at", fromIso).lt("created_at", toIso),
     supabase
       .from("visits")
       .select("customer_id, price, bookings!inner(source)")
@@ -68,6 +69,8 @@ async function Report({ searchParams }: { searchParams: PageProps<"/app/report">
   const visitRows = (allVisits.data ?? []) as { customer_id: string; price: number | null }[];
   const sales = visitRows.reduce((s, r) => s + (r.price ?? 0), 0);
   const pushCount = usage.data?.push_count ?? 0;
+  const reminderRows = (reminderBookings.data ?? []) as { channel: string }[];
+  const byChannel = CHANNELS.map((c) => ({ label: c.short, n: reminderRows.filter((r) => r.channel === c.value).length })).filter((c) => c.n > 0);
   const [y, m] = month.split("-");
 
   return (
@@ -83,10 +86,14 @@ async function Report({ searchParams }: { searchParams: PageProps<"/app/report">
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Stat accent label="案内から戻った人数" value={`${returnedPeople}人`} sub="案内後14日以内の予約で来店" />
+        <Stat accent label="案内から戻った人数" value={`${returnedPeople}人`} sub="案内後14日以内の予約（電話等も含む）で来店" />
         <Stat accent label="案内から戻った売上" value={yen(returnedSales)} />
         <Stat label="案内の送信数" value={`${sent.count ?? 0}通`} />
-        <Stat label="案内からの予約" value={`${reminderBookings.count ?? 0}件`} sub="この月に入った予約" />
+        <Stat
+          label="案内からの予約"
+          value={`${reminderRows.length}件`}
+          sub={byChannel.length ? byChannel.map((c) => `${c.label} ${c.n}`).join("・") : "この月に入った予約"}
+        />
       </div>
 
       <section className="card">

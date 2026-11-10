@@ -4,6 +4,7 @@ import Link from "next/link";
 import { requireSalon } from "@/lib/auth";
 import { DEFAULT_SALON_NAME, getSetupStatus } from "@/lib/setup";
 import { ActionForm } from "@/components/action-form";
+import { LineConnectGuide, LineResponseGuide } from "@/components/line-guide";
 import { PageLoading } from "@/components/loading";
 import { confirmRepairDays, saveSalonName } from "../settings/actions";
 
@@ -13,7 +14,7 @@ export default function SetupPage() {
   return (
     <>
       <h1 className="text-xl font-bold">初期設定</h1>
-      <p className="mb-4 text-sm text-neutral-600">4つのステップで、リペア案内が自動で届くようになります。</p>
+      <p className="mb-4 text-sm text-neutral-600">5つのステップで、リペア案内が自動で届くようになります。</p>
       <Suspense fallback={<PageLoading />}>
         <Wizard />
       </Suspense>
@@ -21,17 +22,18 @@ export default function SetupPage() {
   );
 }
 
-function Step({ n, title, done, children }: { n: number; title: string; done: boolean; children: React.ReactNode }) {
+function Step({ n, title, done, open, children }: { n: number; title: string; done: boolean; open: boolean; children: React.ReactNode }) {
   return (
-    <section className={`card ${done ? "border-green-300" : ""}`}>
-      <h2 className="mb-3 flex items-center gap-2 font-bold">
-        <span className={`flex size-7 items-center justify-center rounded-full text-sm text-white ${done ? "bg-green-600" : "bg-brand-600"}`}>
+    <details className={`card group ${done ? "border-green-300" : ""}`} open={open}>
+      <summary className="flex cursor-pointer list-none items-center gap-2 font-bold">
+        <span className={`flex size-7 shrink-0 items-center justify-center rounded-full text-sm text-white ${done ? "bg-green-600" : "bg-brand-600"}`}>
           {done ? "✓" : n}
         </span>
-        {title}
-      </h2>
-      {children}
-    </section>
+        <span className="flex-1">{title}</span>
+        <span className="text-xs font-normal text-neutral-400 group-open:hidden">{done ? "完了・開く" : "開く"}</span>
+      </summary>
+      <div className="mt-3">{children}</div>
+    </details>
   );
 }
 
@@ -59,7 +61,7 @@ async function Wizard() {
         </div>
       )}
 
-      <Step n={1} title="サロン名" done={st.name}>
+      <Step n={1} title="サロン名" done={st.name} open={!st.name}>
         <ActionForm action={saveSalonName} submitLabel="保存する">
           <div>
             <label htmlFor="name" className="label">LINEの案内やお客さま用ページに表示されます</label>
@@ -68,18 +70,16 @@ async function Wizard() {
         </ActionForm>
       </Step>
 
-      <Step n={2} title="LINE公式アカウントの接続" done={st.line}>
-        <p className="mb-3 text-sm text-neutral-700">
-          {st.line
-            ? `「${salon.line_bot_name ?? "公式アカウント"}」と接続済みです。`
-            : "LINE Developers で作った情報を貼り付けます。パソコンでの作業がおすすめです（10分ほど）。"}
-        </p>
-        <Link href="/app/settings/line" className={st.line ? "btn-secondary w-full" : "btn-primary w-full"}>
-          {st.line ? "接続内容を確認する" : "手順を見て接続する"}
-        </Link>
+      <Step n={2} title="LINE公式アカウントの接続" done={st.line} open={st.name && !st.line}>
+        <p className="mb-3 text-sm text-neutral-700">パソコンでの作業がおすすめです（5分ほど）。コピーして貼るのは2つだけです。</p>
+        <LineConnectGuide salon={salon} />
       </Step>
 
-      <Step n={3} title="リペア日数" done={st.repairDays}>
+      <Step n={3} title="LINEの応答設定（いちばん大事）" done={st.lineResponse} open={st.line && !st.lineResponse}>
+        <LineResponseGuide salon={salon} />
+      </Step>
+
+      <Step n={4} title="リペア日数" done={st.repairDays} open={st.lineResponse && !st.repairDays}>
         <ActionForm action={confirmRepairDays} submitLabel="この日数で決定">
           <div className="flex items-center gap-2">
             <input name="default_repair_days" inputMode="numeric" defaultValue={salon.default_repair_days} aria-label="リペア日数" className="input w-24" />
@@ -89,8 +89,8 @@ async function Wizard() {
         </ActionForm>
       </Step>
 
-      <Step n={4} title="空き枠の登録" done={st.slots}>
-        <p className="mb-3 text-sm text-neutral-700">お客さまはLINEからこの空き枠を選んで予約します。毎週くり返しでまとめて登録できます。</p>
+      <Step n={5} title="空き枠の登録" done={st.slots} open={st.repairDays && !st.slots}>
+        <p className="mb-3 text-sm text-neutral-700">お客さまはLINEの案内からこの空き枠を選んで予約します。毎週くり返しでまとめて登録できます。</p>
         <Link href="/app/slots" className={st.slots ? "btn-secondary w-full" : "btn-primary w-full"}>
           {st.slots ? "空き枠を確認する" : "空き枠を登録する"}
         </Link>

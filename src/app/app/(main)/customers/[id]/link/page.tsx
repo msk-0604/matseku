@@ -5,7 +5,9 @@ import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 import { requireSalon } from "@/lib/auth";
 import { isPast } from "@/lib/date";
-import { liffUrl } from "@/lib/line";
+import { oaMessageUrl } from "@/lib/line";
+import { linkMessage } from "@/lib/link-token";
+import { lineConnected } from "@/lib/setup";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { PageLoading } from "@/components/loading";
 import { createLinkToken } from "../../actions";
@@ -42,26 +44,21 @@ async function LinkQr({
     <Link href={`/app/customers/${id}`} className="text-sm text-neutral-500">← {customer.name}さんのカルテ</Link>
   );
 
-  if (!salon.liff_id || !salon.line_connected_at) {
+  if (!lineConnected(salon) || !salon.line_basic_id) {
     return (
       <div className="space-y-4">
         {back}
         <div className="card space-y-3 text-sm">
           <p className="font-bold">LINEの設定がまだ終わっていません</p>
           <p>お客さまとLINEで連携するには、先にサロンのLINE公式アカウントを接続してください。</p>
-          <Link href="/app/settings/line" className="btn-primary w-full">LINEを接続する</Link>
+          <Link href="/app/setup" className="btn-primary w-full">初期設定を開く</Link>
         </div>
       </div>
     );
   }
 
   const { data: link } = token
-    ? await supabase
-        .from("link_tokens")
-        .select("token, expires_at, used_at")
-        .eq("customer_id", id)
-        .eq("token", token)
-        .maybeSingle()
+    ? await supabase.from("link_tokens").select("token, expires_at, used_at").eq("customer_id", id).eq("token", token).maybeSingle()
     : { data: null };
 
   if (link?.used_at || (customer.line_user_id && !link)) {
@@ -78,8 +75,7 @@ async function LinkQr({
     );
   }
 
-  const valid = link && !isPast(link.expires_at);
-  if (!valid) {
+  if (!link || isPast(link.expires_at)) {
     return (
       <div className="space-y-4">
         {back}
@@ -93,8 +89,8 @@ async function LinkQr({
     );
   }
 
-  const url = liffUrl(salon.liff_id, "/link", { t: link.token });
-  const svg = await QRCode.toString(url, { type: "svg", margin: 1, errorCorrectionLevel: "M" });
+  const message = linkMessage(link.token);
+  const svg = await QRCode.toString(oaMessageUrl(salon.line_basic_id, message), { type: "svg", margin: 1, errorCorrectionLevel: "M" });
 
   return (
     <div className="space-y-4">
@@ -102,15 +98,19 @@ async function LinkQr({
       <AutoRefresh seconds={3} />
       <div className="card text-center">
         <h1 className="text-lg font-bold">{customer.name}さん専用 LINE連携QR</h1>
-        <p className="mt-1 text-sm text-neutral-600">お客さまのスマホのカメラで読み取ってもらい、「登録する」を押してもらってください。</p>
+        <ol className="mt-2 space-y-0.5 text-left text-sm text-neutral-700">
+          <li>1. お客さまのスマホのカメラで読み取ってもらう</li>
+          <li>2. LINEのトークが開くので、そのまま<b>「送信」</b>を押してもらう</li>
+        </ol>
         <div className="mx-auto mt-4 w-64 max-w-full" dangerouslySetInnerHTML={{ __html: svg }} />
-        <p className="mt-3 text-xs text-neutral-500">
-          有効期限：{new Date(link.expires_at).toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit" })}まで（1回だけ使えます）
+        <p className="mt-3 text-xs text-neutral-500">読み取れない場合は、トークに次のコードを送ってもらってもOKです</p>
+        <p className="font-mono text-2xl font-bold tracking-[0.2em]">{link.token}</p>
+        <p className="mt-2 text-xs text-neutral-500">
+          有効期限：{new Date(link.expires_at).toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit" })}まで（1回だけ使えます）。登録が終わると、この画面は自動で切り替わります
         </p>
-        <p className="mt-1 text-xs text-neutral-400">登録が終わると、この画面は自動で切り替わります</p>
       </div>
       {customer.line_user_id && (
-        <p className="text-center text-xs text-neutral-500">※ このお客さまは連携済みです。読み取ると連携先のLINEが置き換わります。</p>
+        <p className="text-center text-xs text-neutral-500">※ このお客さまは連携済みです。送信すると連携先のLINEが置き換わります。</p>
       )}
       <Link href={`/app/customers/${id}`} className="btn-secondary w-full">あとで（カルテに戻る）</Link>
     </div>

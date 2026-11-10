@@ -2,9 +2,11 @@ import { NextResponse, type NextRequest } from "next/server";
 import { decrypt } from "@/lib/crypto";
 import { daysBetween, jstHour, jstMonth, todayJst } from "@/lib/date";
 import { sendEmail, simpleEmail } from "@/lib/email";
-import { liffUrl, pushMessage } from "@/lib/line";
+import { bookingUrl } from "@/lib/booking-link";
+import { pushMessage } from "@/lib/line";
 import { reminderFlex, renderTemplate } from "@/lib/reminder";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getBaseUrl } from "@/lib/url";
 
 /*
  * 毎朝のリペア案内（Vercel Cron が毎日 10:00 JST に呼ぶ）
@@ -33,7 +35,6 @@ type SalonRow = {
   name: string;
   owner_user_id: string;
   line_access_token: string;
-  liff_id: string;
   reminder_template: string | null;
 };
 
@@ -69,6 +70,7 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  const base = await getBaseUrl();
   const summary: Record<string, { sent: number; failed: number; stoppedByLimit: boolean }> = {};
 
   for (const [salonId, list] of bySalon) {
@@ -77,7 +79,7 @@ export async function GET(request: NextRequest) {
 
     const { data: salon } = await admin
       .from("salons")
-      .select("id, name, owner_user_id, line_access_token, liff_id, reminder_template")
+      .select("id, name, owner_user_id, line_access_token, reminder_template")
       .eq("id", salonId)
       .single<SalonRow>();
     if (!salon) continue;
@@ -114,7 +116,7 @@ export async function GET(request: NextRequest) {
       const message = reminderFlex({
         salonName: salon.name,
         visitedAt: d.visited_at,
-        bookUrl: liffUrl(salon.liff_id, "/book"),
+        bookUrl: bookingUrl(base, { salonId, customerId: d.customer_id, reminderId: reminder.id }),
         text: renderTemplate(salon.reminder_template, {
           name: d.customer_name,
           salonName: salon.name,

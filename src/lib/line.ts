@@ -51,38 +51,39 @@ export function verifyLineSignature(channelSecret: string, rawBody: string, sign
   return expected.length === got.length && timingSafeEqual(expected, got);
 }
 
-/** LIFF ID の前半は LINEログインチャネルのID */
-export function loginChannelIdFromLiffId(liffId: string): string {
-  return liffId.split("-")[0];
+/** 応答メッセージ（Webhook の replyToken で返信。月の送信数には数えない） */
+export async function replyMessage(accessToken: string, replyToken: string, messages: unknown[]): Promise<boolean> {
+  try {
+    const res = await lineFetch("/v2/bot/message/reply", accessToken, {
+      method: "POST",
+      body: JSON.stringify({ replyToken, messages }),
+    });
+    if (!res.ok) console.error(`[line] reply failed ${res.status}: ${await res.text()}`);
+    return res.ok;
+  } catch (e) {
+    console.error("[line] reply error", e);
+    return false;
+  }
 }
 
-export function isValidLiffId(liffId: string): boolean {
-  return /^\d{6,}-[A-Za-z0-9]{6,}$/.test(liffId);
+/** 友だちかどうか（友だちでない・ブロック中はプロフィールが取れない） */
+export async function isFriend(accessToken: string, userId: string): Promise<boolean> {
+  try {
+    const res = await lineFetch(`/v2/bot/profile/${encodeURIComponent(userId)}`, accessToken);
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
-/**
- * LIFF から受け取ったアクセストークンを LINE に問い合わせて検証し、LINE のユーザーIDを返す。
- * 他のサロンの LIFF で発行されたトークンは受け付けない。
- */
-export async function verifyLiffUser(accessToken: string, liffId: string): Promise<string | null> {
-  if (!accessToken || accessToken.length > 2000) return null;
-  const verify = await fetch(`${API}/oauth2/v2.1/verify?access_token=${encodeURIComponent(accessToken)}`, {
-    cache: "no-store",
-  });
-  if (!verify.ok) return null;
-  const v = (await verify.json()) as { client_id?: string; expires_in?: number };
-  if (v.client_id !== loginChannelIdFromLiffId(liffId) || !v.expires_in || v.expires_in <= 0) return null;
-
-  const profile = await lineFetch("/v2/profile", accessToken);
-  if (!profile.ok) return null;
-  const p = (await profile.json()) as { userId?: string };
-  return p.userId ?? null;
+/** 公式アカウントとのトークを開き、文を入力済みにするURL（送信はお客さまが押す） */
+export function oaMessageUrl(basicId: string, text: string): string {
+  return `https://line.me/R/oaMessage/${encodeURIComponent(basicId)}/?${encodeURIComponent(text)}`;
 }
 
-/** liff.line.me のURL（LINEアプリでLIFFを開く） */
-export function liffUrl(liffId: string, path = "", query?: Record<string, string>): string {
-  const qs = query ? `?${new URLSearchParams(query).toString()}` : "";
-  return `https://liff.line.me/${liffId}${path}${qs}`;
+/** 友だち追加のURL */
+export function addFriendUrl(basicId: string): string {
+  return `https://line.me/R/ti/p/${encodeURIComponent(basicId)}`;
 }
 
 export type PushResult = { ok: true } | { ok: false; status: number; body: string };

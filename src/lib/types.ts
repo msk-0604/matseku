@@ -4,7 +4,6 @@ export type Salon = {
   default_repair_days: number;
   subscription_status: string;
   line_channel_id: string | null;
-  liff_id: string | null;
   line_basic_id: string | null;
   line_bot_name: string | null;
   line_connected_at: string | null;
@@ -13,11 +12,13 @@ export type Salon = {
   plan: "monthly" | "yearly" | null;
   reminder_template: string | null;
   stripe_subscription_id: string | null;
+  line_test_code: string | null;
+  line_webhook_verified_at: string | null;
 };
 
 /** salons テーブルからブラウザ側で読める列（秘密情報の列は権限上読めない） */
 export const SALON_COLUMNS =
-  "id, name, default_repair_days, subscription_status, line_channel_id, liff_id, line_basic_id, line_bot_name, line_connected_at, trial_ends_at, referral_code, plan, reminder_template, stripe_subscription_id";
+  "id, name, default_repair_days, subscription_status, line_channel_id, line_basic_id, line_bot_name, line_connected_at, trial_ends_at, referral_code, plan, reminder_template, stripe_subscription_id, line_test_code, line_webhook_verified_at";
 
 export type Customer = {
   id: string;

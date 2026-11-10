@@ -9,6 +9,7 @@ import { formatPhone, yen } from "@/lib/text";
 import type { Customer, Visit } from "@/lib/types";
 import { PageLoading } from "@/components/loading";
 import { createLinkToken } from "../actions";
+import { channelShort } from "@/lib/booking";
 
 export const metadata: Metadata = { title: "カルテ" };
 
@@ -54,12 +55,13 @@ async function Karte({ params }: { params: PageProps<"/app/customers/[id]">["par
       .overrideTypes<(Visit & { visit_photos: { count: number }[] })[], { merge: false }>(),
     supabase
       .from("bookings")
-      .select("id, source, slots!inner(starts_at, ends_at)")
+      .select("id, source, channel, starts_at, ends_at")
       .eq("customer_id", id)
       .eq("status", "confirmed")
-      .gte("slots.starts_at", new Date(`${today}T00:00:00+09:00`).toISOString())
+      .gte("starts_at", new Date(`${today}T00:00:00+09:00`).toISOString())
+      .order("starts_at")
       .limit(1)
-      .maybeSingle<{ id: string; source: string; slots: { starts_at: string; ends_at: string } }>(),
+      .maybeSingle<{ id: string; source: string; channel: string; starts_at: string; ends_at: string }>(),
   ]);
   if (!customer) notFound();
   const visits = visitsData ?? [];
@@ -99,12 +101,16 @@ async function Karte({ params }: { params: PageProps<"/app/customers/[id]">["par
 
       {upcoming && (
         <section className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm">
-          <b>次回のご予約：</b>{formatSlot(upcoming.slots.starts_at, upcoming.slots.ends_at, today)}
+          <b>次回のご予約：</b>{formatSlot(upcoming.starts_at, upcoming.ends_at, today)}
+          <span className="chip ml-2 bg-white text-neutral-600">{channelShort(upcoming.channel)}</span>
           {upcoming.source === "reminder" && <span className="chip ml-2 bg-brand-100 text-brand-700">案内から</span>}
         </section>
       )}
 
-      <Link href={`/app/customers/${id}/visits/new`} className="btn-primary w-full">＋ 来店を記録する</Link>
+      <div className="grid grid-cols-2 gap-2">
+        <Link href={`/app/customers/${id}/visits/new`} className="btn-primary">＋ 来店を記録</Link>
+        <Link href={`/app/bookings/new?customer=${id}`} className="btn-secondary">＋ 予約を登録</Link>
+      </div>
 
       {!customer.line_user_id && (
         <form action={createLinkToken.bind(null, id)}>

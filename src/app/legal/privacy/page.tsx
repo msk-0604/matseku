@@ -34,7 +34,7 @@ export default function PrivacyPage() {
         <li>Supabase（データベース・認証・ファイル保存）</li>
         <li>Vercel（ホスティング）</li>
         <li>Stripe（決済）</li>
-        <li>LINEヤフー株式会社（LINE Messaging API、LIFF）</li>
+        <li>LINEヤフー株式会社（LINE Messaging API）</li>
         <li>Resend（メール送信）</li>
       </ul>
       <p>これらの事業者のサーバーは日本国外にある場合があります。【要記入：各社の所在国と、個人情報保護の措置に関する情報提供の内容】</p>

@@ -45,11 +45,11 @@ async function Settings() {
         <div>
           <div className="font-bold">LINE公式アカウントの接続</div>
           <div className="text-sm text-neutral-600">
-            {connected ? `接続済み：${salon.line_bot_name ?? ""}${salon.liff_id ? "" : "（LIFF未設定）"}` : "まだ接続されていません"}
+            {connected ? `接続済み：${salon.line_bot_name ?? ""}${salon.line_webhook_verified_at ? "" : "（応答設定の確認がまだです）"}` : "まだ接続されていません"}
           </div>
         </div>
-        <span className={`chip shrink-0 ${connected && salon.liff_id ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-800"}`}>
-          {connected && salon.liff_id ? "OK" : "要設定"}
+        <span className={`chip shrink-0 ${connected && salon.line_webhook_verified_at ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-800"}`}>
+          {connected && salon.line_webhook_verified_at ? "OK" : "要設定"}
         </span>
       </Link>
 

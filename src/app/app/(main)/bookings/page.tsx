@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireSalon } from "@/lib/auth";
+import { channelShort } from "@/lib/booking";
 import { addDays, formatDate, jstDate, jstTime, jstToIso, todayJst } from "@/lib/date";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { PageLoading } from "@/components/loading";
@@ -13,14 +14,20 @@ type Row = {
   id: string;
   status: string;
   source: "reminder" | "direct";
+  channel: string;
+  note: string | null;
+  starts_at: string;
+  ends_at: string;
   customers: { id: string; name: string; allergy_note: string | null };
-  slots: { starts_at: string; ends_at: string };
 };
 
 export default function BookingsPage() {
   return (
     <>
-      <h1 className="mb-3 text-xl font-bold">予約</h1>
+      <div className="mb-3 flex items-center justify-between">
+        <h1 className="text-xl font-bold">予約</h1>
+        <Link href="/app/bookings/new" className="btn-primary">＋ 予約を登録</Link>
+      </div>
       <Suspense fallback={<PageLoading />}>
         <Bookings />
       </Suspense>
@@ -29,36 +36,35 @@ export default function BookingsPage() {
 }
 
 function List({ items, empty, today }: { items: Row[]; empty: string; today: string }) {
+  if (items.length === 0) return <p className="card text-sm text-neutral-500">{empty}</p>;
   return (
-    items.length === 0 ? (
-      <p className="card text-sm text-neutral-500">{empty}</p>
-    ) : (
-      <ul className="divide-y divide-neutral-100 overflow-hidden rounded-xl border border-neutral-200 bg-white">
-        {items.map((r) => (
-          <li key={r.id} className="flex items-center gap-3 px-4 py-3">
-            <div className="w-20 shrink-0 text-sm">
-              <div className="font-semibold">{jstTime(r.slots.starts_at)}</div>
-              <div className="text-xs text-neutral-500">{formatDate(jstDate(r.slots.starts_at), today)}</div>
+    <ul className="divide-y divide-neutral-100 overflow-hidden rounded-xl border border-neutral-200 bg-white">
+      {items.map((r) => (
+        <li key={r.id} className="flex items-start gap-3 px-4 py-3">
+          <div className="w-20 shrink-0 text-sm">
+            <div className="font-semibold">{jstTime(r.starts_at)}<span className="text-xs font-normal text-neutral-400">〜{jstTime(r.ends_at)}</span></div>
+            <div className="text-xs text-neutral-500">{formatDate(jstDate(r.starts_at), today)}</div>
+          </div>
+          <Link href={`/app/customers/${r.customers.id}`} className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="truncate font-semibold">{r.customers.name}</span>
+              {r.customers.allergy_note && <span className="chip bg-red-100 text-red-700">注意</span>}
+              <span className="chip bg-neutral-100 text-neutral-600">{channelShort(r.channel)}</span>
+              {r.source === "reminder" && <span className="chip bg-brand-100 text-brand-700">案内から</span>}
+              {r.status === "completed" && <span className="chip bg-green-100 text-green-700">来店済</span>}
             </div>
-            <Link href={`/app/customers/${r.customers.id}`} className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="truncate font-semibold">{r.customers.name}</span>
-                {r.customers.allergy_note && <span className="chip bg-red-100 text-red-700">注意</span>}
-                {r.source === "reminder" && <span className="chip bg-brand-100 text-brand-700">案内から</span>}
-                {r.status === "completed" && <span className="chip bg-neutral-100 text-neutral-600">来店済</span>}
-              </div>
-            </Link>
-            {r.status === "confirmed" && (
-              <form action={cancelBooking.bind(null, r.id)}>
-                <ConfirmSubmit className="text-xs text-neutral-400 underline" message={`${r.customers.name}さんの予約を取り消して、枠を空きに戻します。よろしいですか？（お客さまへの連絡はサロンから行ってください）`}>
-                  取消
-                </ConfirmSubmit>
-              </form>
-            )}
-          </li>
-        ))}
-      </ul>
-    )
+            {r.note && <div className="mt-0.5 truncate text-xs text-neutral-500">{r.note}</div>}
+          </Link>
+          {r.status === "confirmed" && (
+            <form action={cancelBooking.bind(null, r.id)}>
+              <ConfirmSubmit className="text-xs text-neutral-400 underline" message={`${r.customers.name}さんの予約を取り消します。よろしいですか？（お客さまへの連絡はサロンから行ってください）`}>
+                取消
+              </ConfirmSubmit>
+            </form>
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -67,14 +73,18 @@ async function Bookings() {
   const today = todayJst();
   const { data } = await supabase
     .from("bookings")
-    .select("id, status, source, customers!inner(id, name, allergy_note), slots!inner(starts_at, ends_at)")
+    .select("id, status, source, channel, note, starts_at, ends_at, customers!inner(id, name, allergy_note)")
     .in("status", ["confirmed", "completed"])
-    .gte("slots.starts_at", jstToIso(today, "00:00"))
-    .lt("slots.starts_at", jstToIso(addDays(today, 7), "00:00"))
+    .gte("starts_at", jstToIso(today, "00:00"))
+    .lt("starts_at", jstToIso(addDays(today, 60), "00:00"))
+    .order("starts_at")
+    .limit(500)
     .overrideTypes<Row[], { merge: false }>();
-  const rows = (data ?? []).sort((a, b) => a.slots.starts_at.localeCompare(b.slots.starts_at));
-  const todays = rows.filter((r) => jstDate(r.slots.starts_at) === today);
-  const later = rows.filter((r) => jstDate(r.slots.starts_at) !== today);
+  const rows = data ?? [];
+  const weekEnd = addDays(today, 7);
+  const todays = rows.filter((r) => jstDate(r.starts_at) === today);
+  const week = rows.filter((r) => jstDate(r.starts_at) > today && jstDate(r.starts_at) < weekEnd);
+  const later = rows.filter((r) => jstDate(r.starts_at) >= weekEnd);
 
   return (
     <div className="space-y-5">
@@ -84,8 +94,14 @@ async function Bookings() {
       </section>
       <section>
         <h2 className="mb-2 font-bold">この先1週間</h2>
-        <List items={later} empty="予約はありません" today={today} />
+        <List items={week} empty="予約はありません" today={today} />
       </section>
+      {later.length > 0 && (
+        <section>
+          <h2 className="mb-2 font-bold">それ以降（60日先まで）</h2>
+          <List items={later} empty="" today={today} />
+        </section>
+      )}
     </div>
   );
 }

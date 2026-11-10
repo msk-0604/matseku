@@ -17,12 +17,12 @@ export async function GET(request: NextRequest, { params }: RouteContext<"/api/i
   const admin = createAdminClient();
   const { data } = await admin
     .from("bookings")
-    .select("id, status, slots!inner(starts_at, ends_at), salons!inner(name)")
+    .select("id, status, starts_at, ends_at, salons!inner(name)")
     .eq("id", bookingId)
     .maybeSingle();
   if (!data || data.status === "canceled") return new NextResponse("not found", { status: 404 });
 
-  const slot = data.slots as unknown as { starts_at: string; ends_at: string };
+  const slot = { starts_at: data.starts_at as string, ends_at: data.ends_at as string };
   const salon = data.salons as unknown as { name: string };
   const body = [
     "BEGIN:VCALENDAR",

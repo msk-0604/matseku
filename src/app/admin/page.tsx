@@ -138,7 +138,7 @@ function SalonRow({ s, today }: { s: SalonMetric; today: string }) {
       <td className="px-3 py-2 text-xs">{formatDate(jstDate(s.createdAt), today)}</td>
       <td className="px-3 py-2 text-xs">
         {check(s.setupSteps.line, "LINE")}
-        {check(s.setupSteps.liff, "LIFF")}
+        {check(s.setupSteps.webhook, "応答設定")}
         {check(s.setupSteps.slots, "枠")}
       </td>
       <td className="px-3 py-2 text-right tabular-nums">{s.reminderBookingsThisMonth}</td>

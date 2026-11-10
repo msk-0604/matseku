@@ -1,10 +1,12 @@
 import "server-only";
 import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
+import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 /** admins テーブルに登録されたユーザーだけ通す（それ以外には 404 を返して存在を隠す） */
 export const requireAdmin = cache(async () => {
+  await connection();
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims?.sub) redirect("/app/login");

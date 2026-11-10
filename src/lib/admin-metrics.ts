@@ -20,7 +20,7 @@ export type SalonMetric = {
   createdAt: string;
   trialEndsAt: string | null;
   setupDone: boolean;
-  setupSteps: { line: boolean; liff: boolean; slots: boolean };
+  setupSteps: { line: boolean; webhook: boolean; slots: boolean };
   lastActiveDay: string | null;
   reminderBookingsThisMonth: number;
   pushThisMonth: number;
@@ -61,7 +61,7 @@ export async function loadMetrics(): Promise<Metrics> {
   const [salonsRes, slotsRes, activityRes, bookingsRes, usageRes, failedRes, statusRes] = await Promise.all([
     admin
       .from("salons")
-      .select("id, name, subscription_status, plan, created_at, trial_ends_at, line_connected_at, liff_id, acquisition, beta_invite_code")
+      .select("id, name, subscription_status, plan, created_at, trial_ends_at, line_connected_at, line_webhook_verified_at, acquisition, beta_invite_code")
       .order("created_at", { ascending: false })
       .limit(5000),
     admin.from("slots").select("salon_id").limit(100000),
@@ -91,8 +91,8 @@ export async function loadMetrics(): Promise<Metrics> {
   );
 
   const salons: SalonMetric[] = salonsRaw.map((s) => {
-    const steps = { line: Boolean(s.line_connected_at), liff: Boolean(s.liff_id), slots: hasSlots.has(s.id) };
-    const setupDone = steps.line && steps.liff && steps.slots;
+    const steps = { line: Boolean(s.line_connected_at), webhook: Boolean(s.line_webhook_verified_at), slots: hasSlots.has(s.id) };
+    const setupDone = steps.line && steps.webhook && steps.slots;
     const last = lastActive.get(s.id) ?? null;
     const risks: string[] = [];
     if (LIVE.includes(s.subscription_status)) {

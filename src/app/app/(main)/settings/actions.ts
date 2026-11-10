@@ -5,7 +5,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireSalon } from "@/lib/auth";
 import { decrypt, encrypt } from "@/lib/crypto";
-import { getBotInfo, isValidLiffId, setWebhookEndpoint, testWebhook } from "@/lib/line";
+import { getBotInfo, setWebhookEndpoint, testWebhook } from "@/lib/line";
+import { randomInt } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getBaseUrl, webhookUrl } from "@/lib/url";
 import { stripe } from "@/lib/stripe";
@@ -35,18 +36,15 @@ export async function saveLineSettings(_prev: SettingsState, fd: FormData): Prom
   const { salon } = await requireSalon();
   const admin = createAdminClient();
 
-  const channelId = String(fd.get("line_channel_id") ?? "").normalize("NFKC").trim();
   const secretInput = String(fd.get("line_channel_secret") ?? "").trim();
-  const tokenInput = String(fd.get("line_access_token") ?? "").trim();
-  const liffId = String(fd.get("liff_id") ?? "").normalize("NFKC").trim();
-
-  if (!/^\d{6,20}$/.test(channelId)) return { error: "チャネルIDは数字で入力してください" };
-  if (secretInput && !/^[0-9a-f]{32}$/i.test(secretInput)) return { error: "チャネルシークレットの形式が正しくありません（32文字の英数字）" };
-  if (liffId && !isValidLiffId(liffId)) return { error: "LIFF ID の形式が正しくありません（例：1234567890-AbcdEfgh）" };
+  const tokenInput = String(fd.get("line_access_token") ?? "").replace(/\s+/g, "");
+  if (secretInput && !/^[0-9a-f]{32}$/i.test(secretInput)) {
+    return { error: "チャネルシークレットの形式が正しくありません（32文字の英数字）。前後に空白が入っていないか確認してください" };
+  }
 
   const { data: current } = await admin
     .from("salons")
-    .select("line_channel_secret, line_access_token")
+    .select("line_channel_secret, line_access_token, line_test_code")
     .eq("id", salon.id)
     .single();
 
@@ -56,18 +54,17 @@ export async function saveLineSettings(_prev: SettingsState, fd: FormData): Prom
   if (!token) return { error: "チャネルアクセストークンを入力してください" };
 
   const bot = await getBotInfo(token);
-  if (!bot) return { error: "チャネルアクセストークンが正しくありません。LINE Developers で発行した「長期」のトークンを貼り付けてください" };
+  if (!bot) return { error: "チャネルアクセストークンが正しくありません。「発行」を押して表示された長い文字列を、すべてコピーして貼り付けてください" };
 
   const { error } = await admin
     .from("salons")
     .update({
-      line_channel_id: channelId,
       line_channel_secret: encrypt(secret),
       line_access_token: encrypt(token),
-      liff_id: liffId || null,
       line_basic_id: bot.basicId,
       line_bot_name: bot.displayName,
       line_connected_at: new Date().toISOString(),
+      line_test_code: current?.line_test_code ?? newTestCode(),
     })
     .eq("id", salon.id);
   if (error) return { error: `保存できませんでした（${error.message}）` };
@@ -75,7 +72,7 @@ export async function saveLineSettings(_prev: SettingsState, fd: FormData): Prom
   await admin.from("events").insert({ salon_id: salon.id, type: "line_connected", props: {} });
   revalidatePath("/app", "layout");
 
-  // Webhook の送り先を登録してテストする（失敗しても保存は完了している）
+  // Webhook の送り先を登録してテストする（署名の検証が通れば、シークレットも正しい）
   const base = await getBaseUrl();
   if (base.startsWith("http://")) {
     return { ok: true, message: `「${bot.displayName}」と接続しました。※ローカル環境のため Webhook の登録は行っていません` };
@@ -86,10 +83,15 @@ export async function saveLineSettings(_prev: SettingsState, fd: FormData): Prom
   if (!test.success) {
     return {
       ok: true,
-      message: `「${bot.displayName}」と接続しました。ただし Webhook のテストに失敗しました（${test.reason ?? `HTTP ${test.statusCode}`}）。チャネルシークレットと、Vercel の Deployment Protection を確認してください`,
+      message: `「${bot.displayName}」と接続しました。ただし確認に失敗しました（${test.statusCode === 401 ? "チャネルシークレットが違います" : (test.reason ?? `HTTP ${test.statusCode}`)}）。チャネルシークレットを貼り直してください`,
     };
   }
-  return { ok: true, message: `「${bot.displayName}」と接続しました。Webhook のテストも成功しました` };
+  return { ok: true, message: `「${bot.displayName}」と接続しました。次は「LINEの応答設定」に進んでください` };
+}
+
+function newTestCode(): string {
+  const a = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  return `RC${Array.from({ length: 6 }, () => a[randomInt(a.length)]).join("")}`;
 }
 
 export async function saveReminderTemplate(_prev: SettingsState, fd: FormData): Promise<SettingsState> {

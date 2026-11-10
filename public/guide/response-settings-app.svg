@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 470" font-family="'Hiragino Sans','Noto Sans JP',sans-serif">
+  <rect width="720" height="470" rx="12" fill="#f4f5f7"/>
+  <!-- 画面1 ホーム -->
+  <g transform="translate(20,20)">
+    <rect width="210" height="410" rx="26" fill="#222"/><rect x="8" y="8" width="194" height="394" rx="20" fill="#fff"/>
+    <text x="22" y="46" font-size="13" font-weight="bold" fill="#333">ホーム</text>
+    <rect x="140" y="28" width="52" height="28" rx="6" fill="#fff" stroke="#e11d48" stroke-width="3"/>
+    <text x="152" y="47" font-size="12" fill="#333">設定</text>
+    <circle cx="194" cy="26" r="11" fill="#e11d48"/><text x="190" y="31" font-size="12" font-weight="bold" fill="#fff">1</text>
+    <rect x="22" y="76" width="166" height="60" rx="8" fill="#f1f3f5"/>
+    <rect x="22" y="146" width="166" height="60" rx="8" fill="#f1f3f5"/>
+    <rect x="22" y="216" width="166" height="60" rx="8" fill="#f1f3f5"/>
+    <text x="105" y="420" font-size="12" text-anchor="middle" fill="#fff">右上の「設定」</text>
+  </g>
+  <text x="246" y="230" font-size="26" fill="#999">›</text>
+  <!-- 画面2 設定 -->
+  <g transform="translate(255,20)">
+    <rect width="210" height="410" rx="26" fill="#222"/><rect x="8" y="8" width="194" height="394" rx="20" fill="#fff"/>
+    <text x="22" y="46" font-size="13" font-weight="bold" fill="#333">設定</text>
+    <g font-size="12" fill="#444">
+      <text x="22" y="84">アカウント設定</text>
+      <text x="22" y="156">Messaging API</text>
+      <text x="22" y="192">権限管理</text>
+    </g>
+    <rect x="16" y="102" width="178" height="30" rx="6" fill="#fff" stroke="#e11d48" stroke-width="3"/>
+    <text x="26" y="122" font-size="13" font-weight="bold" fill="#333">応答設定</text>
+    <circle cx="194" cy="102" r="11" fill="#e11d48"/><text x="190" y="107" font-size="12" font-weight="bold" fill="#fff">2</text>
+    <text x="105" y="420" font-size="12" text-anchor="middle" fill="#fff">「応答設定」</text>
+  </g>
+  <text x="481" y="230" font-size="26" fill="#999">›</text>
+  <!-- 画面3 応答設定 -->
+  <g transform="translate(490,20)">
+    <rect width="210" height="410" rx="26" fill="#222"/><rect x="8" y="8" width="194" height="394" rx="20" fill="#fff"/>
+    <text x="22" y="46" font-size="13" font-weight="bold" fill="#333">応答設定</text>
+    <text x="22" y="82" font-size="11" fill="#444">チャット</text>
+    <rect x="148" y="70" width="36" height="18" rx="9" fill="#c8ccd2"/><circle cx="157" cy="79" r="7" fill="#fff"/>
+    <text x="22" y="114" font-size="11" fill="#444">あいさつメッセージ</text>
+    <rect x="148" y="102" width="36" height="18" rx="9" fill="#c8ccd2"/><circle cx="157" cy="111" r="7" fill="#fff"/>
+    <rect x="14" y="132" width="182" height="34" rx="6" fill="#ecfdf3" stroke="#16a34a" stroke-width="3"/>
+    <text x="22" y="154" font-size="12" font-weight="bold" fill="#166534">Webhook</text>
+    <rect x="148" y="140" width="36" height="18" rx="9" fill="#06c755"/><circle cx="175" cy="149" r="7" fill="#fff"/>
+    <text x="96" y="154" font-size="11" font-weight="bold" fill="#166534">オン</text>
+    <circle cx="196" cy="132" r="11" fill="#e11d48"/><text x="192" y="137" font-size="12" font-weight="bold" fill="#fff">3</text>
+    <rect x="14" y="176" width="182" height="34" rx="6" fill="#fff1f2" stroke="#e11d48" stroke-width="3"/>
+    <text x="22" y="198" font-size="12" font-weight="bold" fill="#9f1239">応答メッセージ</text>
+    <rect x="148" y="184" width="36" height="18" rx="9" fill="#c8ccd2"/><circle cx="157" cy="193" r="7" fill="#fff"/>
+    <text x="118" y="198" font-size="11" font-weight="bold" fill="#9f1239">オフ</text>
+    <circle cx="196" cy="176" r="11" fill="#e11d48"/><text x="192" y="181" font-size="12" font-weight="bold" fill="#fff">4</text>
+    <text x="22" y="240" font-size="10" fill="#888">チャット・あいさつは</text>
+    <text x="22" y="254" font-size="10" fill="#888">どちらでもOK</text>
+    <text x="105" y="420" font-size="12" text-anchor="middle" fill="#fff">Webhookオン／応答オフ</text>
+  </g>
+  <text x="700" y="462" font-size="11" text-anchor="end" fill="#999">画面イメージ（LINE公式アカウントアプリ・実際と異なる場合があります）</text>
+</svg>

@@ -4,9 +4,15 @@ import type { Salon } from "@/lib/types";
 
 export const DEFAULT_SALON_NAME = "マイサロン";
 
+/** トークンとシークレットが保存され、公式アカウントの情報を取得できている */
+export function lineConnected(salon: Pick<Salon, "line_connected_at" | "line_basic_id">): boolean {
+  return Boolean(salon.line_connected_at && salon.line_basic_id);
+}
+
 export type SetupStatus = {
   name: boolean;
   line: boolean;
+  lineResponse: boolean;
   repairDays: boolean;
   slots: boolean;
   done: number;
@@ -22,10 +28,11 @@ export async function getSetupStatus(supabase: SupabaseClient, salon: Salon): Pr
   ]);
   const s = {
     name: salon.name.trim() !== "" && salon.name !== DEFAULT_SALON_NAME,
-    line: Boolean(salon.line_connected_at && salon.liff_id),
+    line: lineConnected(salon),
+    lineResponse: Boolean(salon.line_webhook_verified_at),
     repairDays: (repairEvents ?? 0) > 0,
     slots: (slotCount ?? 0) > 0,
   };
   const done = Object.values(s).filter(Boolean).length;
-  return { ...s, done, total: 4, complete: done === 4 };
+  return { ...s, done, total: 5, complete: done === 5 };
 }

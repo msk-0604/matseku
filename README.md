@@ -27,6 +27,7 @@ src/components/        フォームなどの部品
    - `20261117000000_week2_line.sql`（2週目：LINE接続・予約）
    - `20261124000000_week3_reminders_billing.sql`（3週目：リペア案内・課金・読み取り専用モード）
    - `20261201000000_week4_admin.sql`（4週目：管理画面・ベータ招待・利用状況）
+   - `20261208000000_line_without_liff_and_salon_bookings.sql`（LIFFなしのLINE連携・サロン側の予約登録）
    - 「Success. No rows returned」と出ればOK。
    - **Table Editor** に salons、customers、visits などのテーブルができ、**Storage** に `visit-photos` バケットができます。
 3. **Authentication → Sign In / Providers → Email** が有効になっていることを確認。テスト中は **Confirm email** をOFFにしておくと楽です。
@@ -74,16 +75,19 @@ npm run dev      # http://localhost:3000/app
 2. **Settings → Environment Variables** に上の表の「○」の3つを登録（Production と Preview）。
 3. push すると自動でデプロイされます。
 4. **Settings → Deployment Protection** で Preview の **Vercel Authentication をOFF**。
-   ONのままだと LINE の Webhook やお客さまの LIFF ページがプレビューURLに入れません。
+   ONのままだと LINE の Webhook やお客さまの予約ページがプレビューURLに入れません。
 
 ### 5. LINE
 
-アプリにログインして **設定 → LINE公式アカウントの接続** を開くと、画面に手順が出ます。
+LINEログインチャネル・LIFFは使いません。サロンがやることは次の3つだけで、初期設定ウィザード（`/app/setup`）に画像つきで案内が出ます。
 
-- Messaging API チャネルと LINEログインチャネルは**同じプロバイダー**に作る（別だとお客さまのIDが一致しない）
-- LINEログインチャネルは**「公開済み」**にする
-- LIFF のエンドポイントURLは `https://<公開URL>/liff/<サロンID>`（画面に表示されます）
-- Webhook URL は保存時に自動で登録されます。「Webhookの利用」だけ手動でオンにする
+1. Messaging API のチャネルシークレットとチャネルアクセストークン（長期）を貼り付けて保存（Webhook URL は自動で登録）
+2. LINE Official Account Manager の応答設定で **Webhook をオン**、**応答メッセージをオフ**
+3. 自分のLINEから確認コードを送り、「確認できました」になればOK
+
+- お客さまのLINE連携：QR → トークに「連携コード XXXXXX」が入った状態で開く → 送信 → 自動で紐づけ（応答メッセージで返信。送信数に数えない）
+- 予約：案内に入っている専用URL（`/r/<token>`、30日有効）。トークで「予約」と送っても届く
+- ガイド画像は `public/guide/*.svg`（画面イメージ）。実際のスクリーンショットに差し替える場合は同じファイル名で置き換えてください
 
 ### 6. Stripe
 
@@ -134,8 +138,8 @@ curl -H "Authorization: Bearer <CRON_SECRET>" "https://<公開URL>/api/cron/remi
 | `/api/cron/daily-report` | 運営者への日次レポート（9:00 JST） |
 | `/api/cron/reminders` | 毎朝のリペア案内 |
 | `/api/stripe/webhook` | Stripe Webhook |
-| `/liff/<サロンID>/link?t=…` | お客さま：LINE連携（QRから開く） |
-| `/liff/<サロンID>/book` | お客さま：予約ページ |
+| `/r/<token>` | お客さま：専用の予約ページ（案内・「予約」の返信から） |
+| `/app/bookings/new` | サロン：予約の登録（電話・ホットペッパーなど） |
 | `/api/line/webhook/<サロンID>` | LINE Webhook |
 
 ## よく使うコマンド

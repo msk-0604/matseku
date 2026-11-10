@@ -16,7 +16,3 @@ export async function getBaseUrl(): Promise<string> {
 export function webhookUrl(base: string, salonId: string): string {
   return `${base}/api/line/webhook/${salonId}`;
 }
-
-export function liffEndpointUrl(base: string, salonId: string): string {
-  return `${base}/liff/${salonId}`;
-}

@@ -12,7 +12,7 @@
 
 ### 利用者
 - **サロン**（1〜3人規模のオーナー）：スマホのブラウザで使う。ホーム画面に追加できる形（PWA）。
-- **お客さま**：LINEの中だけで完結（LIFF）。アプリのインストールやアカウント作成はさせない。
+- **お客さま**：LINEの中だけで完結（LIFFは使わない。トークへの送信と、LINE内ブラウザで開く専用URL）。アプリのインストールやアカウント作成はさせない。
 - **運営者（開発者本人）**：専用の管理画面だけを使う。
 
 ## 2. 技術スタック
@@ -21,7 +21,7 @@
 - Supabase：Postgres、Auth、Storage（施術写真）、Row Level Security
 - Vercel：ホスティング、Vercel Cron（毎日の自動処理）
 - Stripe：Checkout、Billing（サブスク）、Customer Portal、Webhook
-- LINE：Messaging API（各サロンのチャネル）、LIFF（お客さま用画面）
+- LINE：Messaging API（各サロンのチャネル）のみ。LINEログインチャネル・LIFFは使わない
 - メール送信：Resend など（運営者への日次レポート、サロンへの案内）
 
 App Storeでは配布しない（課金ルールのため）。Webアプリとして提供する。
@@ -41,9 +41,14 @@ App Storeでは配布しない（課金ルールのため）。Webアプリと�
 10. 月次レポート：「案内から戻った人数・金額」「今月のLINE送信数 / 200」
 11. 設定：リペア日数、案内文のテンプレート、プラン・請求（Stripe Customer Portalへのリンク）
 
-### お客さま用（LIFF, /liff）
-1. LINE連携ページ：QRから開き「登録する」を押すだけで line_user_id と顧客を紐づける
-2. 予約ページ：空き枠を選んで予約。完了はページ上に表示する（LINEの送信数を使わない）。カレンダー登録ボタンを出す
+### お客さま用（LIFFなし）
+1. LINE連携：サロンが表示するQRを読み取ると、公式アカウントのトークに「連携コード XXXXXX」が入力された状態で開く。送信すると Webhook が受け取り、line_user_id と顧客を紐づけて応答メッセージで知らせる（応答メッセージは送信数に数えない）
+2. 予約ページ（`/r/<token>`）：案内に入れた顧客専用の署名つきURL。トークで「予約」と送っても応答で届く。空き枠を選んで予約。完了はページ上に表示する（LINEの送信数を使わない）。カレンダー登録ボタンを出す
+
+サロンの準備は、Messaging API のチャネルアクセストークンとチャネルシークレットを貼ることと、LINE Official Account Manager の応答設定（Webhookオン・応答メッセージオフ）だけ。応答設定は初期設定ウィザードで画像つきで案内し、確認コードの送信で設定できたことを確かめる。
+
+### サロン側からの予約登録
+電話やホットペッパーで受けた予約を、カルテや予約一覧から登録できる（空き枠がなくても日時を直接入力）。予約は日時（starts_at / ends_at）と受付経路（channel：line / phone / hotpepper / other）を持ち、空き枠は任意。登録した予約は「今日以降の予約あり」として扱い、リペア案内の対象から外す。重なる空き枠は自動で予約済みにする。案内の送信後14日以内に入った予約は、受付経路にかかわらず「案内からの予約」として数える。
 
 ### 運営者用（/admin、管理者のみ）
 - MRR、有料店舗数、体験中の店舗数、体験→有料の転換率、月次の解約率
@@ -67,12 +72,12 @@ App Storeでは配布しない（課金ルールのため）。Webアプリと�
 
 ## 5. データモデル（目安）
 
-- salons：id, owner_user_id, name, line_channel_id, line_channel_secret（暗号化）, line_access_token（暗号化）, default_repair_days（初期値21）, liff_id, stripe_customer_id, subscription_status, trial_ends_at, referral_code, created_at
+- salons：id, owner_user_id, name, line_channel_id, line_channel_secret（暗号化）, line_access_token（暗号化）, default_repair_days（初期値21）, line_basic_id, line_webhook_verified_at, stripe_customer_id, subscription_status, trial_ends_at, referral_code, created_at
 - customers：id, salon_id, name, name_kana, phone, birthday, memo, allergy_note, patch_test_on, sensitive_consent, line_user_id, line_blocked, repair_days（null ならサロンの初期値）, notify_opt_out, created_at
 - visits：id, salon_id, customer_id, visited_at, menu, price, lash_design（jsonb）, note, booking_id（予約経由なら）
 - visit_photos：id, visit_id, storage_path
 - slots：id, salon_id, starts_at, ends_at, is_booked
-- bookings：id, salon_id, customer_id, slot_id, status, source（'reminder' | 'direct'）, reminder_id, created_at
+- bookings：id, salon_id, customer_id, slot_id（任意）, starts_at, ends_at, status, source（'reminder' | 'direct'）, channel（'line' | 'phone' | 'hotpepper' | 'other'）, note, reminder_id, created_at
 - reminders：id, salon_id, customer_id, cycle_visit_id（どの来店に対する案内か）, sent_at, status
 - link_tokens：id, salon_id, customer_id, token, expires_at, used_at
 - line_usage：salon_id, month, push_count
@@ -89,7 +94,7 @@ Vercel Cronで毎日 10:00（日本時間）に実行。各サロンについて
 3. その最新来店（cycle_visit_id）に対する案内をまだ送っていない
 4. line_user_id がある、ブロックされていない、notify_opt_out でない
 
-見つかった顧客に Messaging API の Push で1通送る（Flex Message：サロン名、前回来店日、「空き枠を見て予約する」ボタン → LIFF予約ページ）。
+見つかった顧客に Messaging API の Push で1通送る（Flex Message：サロン名、前回来店日、「空き枠を見て予約する」ボタン → そのお客さま専用の署名つき予約URL `/r/<token>`、有効期限30日）。
 
 制約：
 - 送信は 10:00〜20:00 の間だけ
@@ -119,7 +124,7 @@ Vercel Cronで毎日 10:00（日本時間）に実行。各サロンについて
 ## 9. 進め方（約4週間）
 
 - **1週目**：プロジェクト作成、Supabaseのスキーマとセキュリティ設定、サロンのログイン、顧客一覧・カルテ・来店記録（マツエク設計つき）
-- **2週目**：LINEチャネル接続、LIFFの連携ページ（QR）、空き枠と予約ページ、Webhook（follow/unfollow）
+- **2週目**：LINEチャネル接続、LINE連携（QR）、空き枠と予約ページ、Webhook（follow/unfollow）
 - **3週目**：毎朝のリペア案内、月次レポート、Stripe（Checkout・Webhook・Portal・紹介クーポン）
 - **4週目**：運営者の管理画面、日次レポートのメール、初期設定ウィザードの仕上げ、本番環境（Vercel）への公開、ベータ用の招待
 

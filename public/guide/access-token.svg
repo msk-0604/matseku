@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 300" font-family="'Hiragino Sans','Noto Sans JP',sans-serif">
+  <rect width="720" height="300" rx="12" fill="#f4f5f7"/>
+  <rect x="12" y="12" width="696" height="276" rx="8" fill="#fff" stroke="#d0d4da"/>
+  <text x="28" y="44" font-size="12" fill="#888">LINE Developers ＞ プロバイダー ＞ サロンのチャネル</text>
+  <g font-size="13">
+    <text x="28" y="80" fill="#666">チャネル基本設定</text>
+    <rect x="150" y="62" width="150" height="28" rx="4" fill="#fff" stroke="#e11d48" stroke-width="3"/>
+    <text x="164" y="81" font-weight="bold" fill="#333">Messaging API設定</text>
+    <circle cx="302" cy="62" r="12" fill="#e11d48"/><text x="298" y="67" font-weight="bold" fill="#fff">1</text>
+    <text x="330" y="80" fill="#666">LINEログイン設定</text>
+  </g>
+  <line x1="28" y1="100" x2="690" y2="100" stroke="#e5e7eb"/>
+  <text x="28" y="130" font-size="12" fill="#888">（ページのいちばん下までスクロール）</text>
+  <text x="28" y="168" font-size="15" font-weight="bold" fill="#222">チャネルアクセストークン（長期）</text>
+  <rect x="28" y="184" width="110" height="36" rx="6" fill="#06c755" stroke="#e11d48" stroke-width="3"/>
+  <text x="83" y="207" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">発行</text>
+  <circle cx="140" cy="184" r="12" fill="#e11d48"/><text x="136" y="189" font-size="13" font-weight="bold" fill="#fff">2</text>
+  <rect x="160" y="184" width="430" height="36" rx="6" fill="#fff7ed" stroke="#ea580c" stroke-width="3"/>
+  <text x="174" y="207" font-size="13" fill="#9a3412">eyJhbGciOi...（長い文字列。これをコピー）</text>
+  <rect x="598" y="186" width="44" height="32" rx="6" fill="#f1f3f5"/>
+  <text x="620" y="207" font-size="11" text-anchor="middle" fill="#444">コピー</text>
+  <circle cx="644" cy="184" r="12" fill="#e11d48"/><text x="640" y="189" font-size="13" font-weight="bold" fill="#fff">3</text>
+  <text x="560" y="280" font-size="11" fill="#999">画面イメージ（実際と異なる場合があります）</text>
+</svg>

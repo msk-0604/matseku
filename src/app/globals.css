@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #fdf2f6;
+  --color-brand-100: #fbe4ee;
+  --color-brand-200: #f7c9dc;
+  --color-brand-500: #d9467f;
+  --color-brand-600: #c22f69;
+  --color-brand-700: #a12456;
+  --font-sans: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", Meiryo, system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: #faf8f9;
+  color: #1f1a1d;
+}
+
+/* iOS で入力時に拡大されないよう 16px 以上にする */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+/* 共通の部品（@apply で組み合わせられるよう @utility で定義） */
+@utility input {
+    @apply block w-full rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-base outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 disabled:bg-neutral-100 disabled:text-neutral-400;
+}
+
+@utility label {
+    @apply mb-1 block text-sm font-medium text-neutral-700;
+}
+
+@utility btn {
+    @apply inline-flex min-h-11 items-center justify-center gap-1 rounded-lg px-4 py-2.5 text-base font-semibold transition disabled:opacity-50;
+}
+
+@utility btn-primary {
+    @apply btn bg-brand-600 text-white active:bg-brand-700;
+}
+
+@utility btn-secondary {
+    @apply btn border border-neutral-300 bg-white text-neutral-800 active:bg-neutral-100;
+}
+
+@utility btn-danger {
+    @apply btn border border-red-300 bg-white text-red-700 active:bg-red-50;
+}
+
+@utility card {
+    @apply rounded-xl border border-neutral-200 bg-white p-4;
+}
+
+@utility chip {
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+}

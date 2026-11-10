@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 460" font-family="'Hiragino Sans','Noto Sans JP',sans-serif">
+  <rect width="720" height="460" rx="12" fill="#f4f5f7"/>
+  <!-- ブラウザ枠 -->
+  <rect x="12" y="12" width="696" height="436" rx="8" fill="#fff" stroke="#d0d4da"/>
+  <rect x="12" y="12" width="696" height="34" rx="8" fill="#eceff3"/>
+  <circle cx="32" cy="29" r="5" fill="#ff6159"/><circle cx="48" cy="29" r="5" fill="#ffbd2e"/><circle cx="64" cy="29" r="5" fill="#28c941"/>
+  <rect x="90" y="20" width="300" height="18" rx="9" fill="#fff"/>
+  <text x="102" y="33" font-size="11" fill="#666">manager.line.biz</text>
+  <!-- 上部バー -->
+  <rect x="12" y="46" width="696" height="40" fill="#fff" stroke="#e5e7eb"/>
+  <text x="28" y="71" font-size="14" font-weight="bold" fill="#333">サロンのアカウント名</text>
+  <text x="430" y="71" font-size="13" fill="#555">ホーム　チャット　分析</text>
+  <rect x="608" y="54" width="70" height="24" rx="4" fill="#fff" stroke="#e11d48" stroke-width="3"/>
+  <text x="626" y="71" font-size="13" fill="#333">設定</text>
+  <circle cx="690" cy="52" r="12" fill="#e11d48"/><text x="686" y="57" font-size="13" font-weight="bold" fill="#fff">1</text>
+  <!-- 左メニュー -->
+  <rect x="12" y="86" width="170" height="362" fill="#fafafa" stroke="#e5e7eb"/>
+  <text x="28" y="114" font-size="12" fill="#888">アカウント設定</text>
+  <text x="28" y="140" font-size="13" fill="#444">権限管理</text>
+  <rect x="20" y="152" width="150" height="28" rx="4" fill="#fff" stroke="#e11d48" stroke-width="3"/>
+  <text x="32" y="171" font-size="13" font-weight="bold" fill="#333">応答設定</text>
+  <circle cx="172" cy="152" r="12" fill="#e11d48"/><text x="168" y="157" font-size="13" font-weight="bold" fill="#fff">2</text>
+  <text x="28" y="204" font-size="13" fill="#444">Messaging API</text>
+  <text x="28" y="230" font-size="13" fill="#444">登録情報</text>
+  <!-- 本文 -->
+  <text x="206" y="118" font-size="16" font-weight="bold" fill="#222">応答設定</text>
+  <text x="206" y="146" font-size="12" fill="#888">応答機能</text>
+  <g font-size="14" fill="#333">
+    <text x="206" y="182">チャット</text>
+    <text x="206" y="226">あいさつメッセージ</text>
+    <text x="206" y="270">Webhook</text>
+    <text x="206" y="314">応答メッセージ</text>
+  </g>
+  <g font-size="11" fill="#888">
+    <text x="380" y="182">どちらでもOK</text>
+    <text x="380" y="226">どちらでもOK</text>
+  </g>
+  <!-- トグル -->
+  <rect x="470" y="168" width="44" height="22" rx="11" fill="#c8ccd2"/><circle cx="481" cy="179" r="9" fill="#fff"/>
+  <rect x="470" y="212" width="44" height="22" rx="11" fill="#c8ccd2"/><circle cx="481" cy="223" r="9" fill="#fff"/>
+  <!-- Webhook ON -->
+  <rect x="196" y="250" width="490" height="34" rx="6" fill="#ecfdf3" stroke="#16a34a" stroke-width="3"/>
+  <text x="206" y="272" font-size="14" font-weight="bold" fill="#166534">Webhook</text>
+  <rect x="470" y="256" width="44" height="22" rx="11" fill="#06c755"/><circle cx="503" cy="267" r="9" fill="#fff"/>
+  <text x="530" y="273" font-size="15" font-weight="bold" fill="#166534">オン にする</text>
+  <circle cx="686" cy="250" r="12" fill="#e11d48"/><text x="682" y="255" font-size="13" font-weight="bold" fill="#fff">3</text>
+  <!-- 応答メッセージ OFF -->
+  <rect x="196" y="294" width="490" height="34" rx="6" fill="#fff1f2" stroke="#e11d48" stroke-width="3"/>
+  <text x="206" y="316" font-size="14" font-weight="bold" fill="#9f1239">応答メッセージ</text>
+  <rect x="470" y="300" width="44" height="22" rx="11" fill="#c8ccd2"/><circle cx="481" cy="311" r="9" fill="#fff"/>
+  <text x="530" y="317" font-size="15" font-weight="bold" fill="#9f1239">オフ にする</text>
+  <circle cx="686" cy="294" r="12" fill="#e11d48"/><text x="682" y="299" font-size="13" font-weight="bold" fill="#fff">4</text>
+  <text x="206" y="372" font-size="12" fill="#555">※ 切り替えると自動で保存されます</text>
+  <text x="520" y="436" font-size="11" fill="#999">画面イメージ（実際と異なる場合があります）</text>
+</svg>
